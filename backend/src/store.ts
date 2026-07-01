@@ -88,6 +88,37 @@ export interface Review {
   createdAt: string;
 }
 
+export interface VoiceAssistant {
+  id: string;
+  organizationId: string;
+  vapiAssistantId: string | null;
+  name: string;
+  industry: string;
+  status: "pending" | "active" | "updating" | "failed";
+  errorMessage: string | null;
+  config: any;
+  lastSyncedAt: string | null;
+  createdAt: string;
+}
+
+export interface VoiceCallLog {
+  id: string;
+  assistantId: string;
+  vapiCallId: string;
+  type: string;
+  startedAt: string;
+  endedAt: string;
+  duration: number;
+  cost: number;
+  status: string;
+  transcript: string;
+  summary: string;
+  recordingUrl: string;
+}
+
+export const voiceAssistants: VoiceAssistant[] = [];
+export const voiceCallLogs: VoiceCallLog[] = [];
+
 // ── Users (9 accounts, unchanged) ────────────────────────────────────
 export const users: User[] = [
   // Owners

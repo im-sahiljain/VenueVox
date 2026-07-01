@@ -16,8 +16,15 @@ import {
   Booking,
   Message,
   Notification,
-  Review
+  Review,
+  voiceAssistants,
+  voiceCallLogs
 } from './store';
+import webhookRoutes from './routes/webhook.routes';
+import { provisionAssistant } from './services/assistant.service';
+import { getCalls } from './services/vapi.service';
+import { industryTemplates } from './templates/industries';
+import { getConfig } from './config/env';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -52,8 +59,9 @@ app.post('/api/v1/auth/login', (req: Request, res: Response) => {
     // Register on the fly
     const id = `u-${role === 'organization' ? 'org' : 'perf'}-${Date.now()}`;
     const name = role === 'organization' ? 'New Venue Partner' : 'Rising Artist';
-    user = { id, email, role, name };
-    users.push(user);
+    const newUser: User = { id, email, role, name, password: 'password123' };
+    users.push(newUser);
+    user = newUser;
 
     // If performer, create a performer profile
     if (role === 'performer') {
@@ -78,12 +86,12 @@ app.post('/api/v1/auth/login', (req: Request, res: Response) => {
 
   // Fetch linked performer details if applicable
   let performerDetails = null;
-  if (user.role === 'performer') {
+  if (user && user.role === 'performer') {
     performerDetails = performers.find(p => p.userId === user?.id) || null;
   }
 
   return sendResponse(res, 200, true, {
-    token: `mock-jwt-token-for-${user.id}`,
+    token: `mock-jwt-token-for-${user?.id}`,
     user,
     performer: performerDetails
   }, 'Login successful');
@@ -93,8 +101,12 @@ app.post('/api/v1/auth/login', (req: Request, res: Response) => {
 // VENUE MODULE
 // -------------------------------------------------------------
 app.get('/api/v1/venues', (req: Request, res: Response) => {
-  // Return all venues
-  return sendResponse(res, 200, true, venues, 'Venues retrieved successfully');
+  // Return all venues with voice assistant status attached
+  const detailedVenues = venues.map(v => {
+    const hasVoiceAssistant = voiceAssistants.some(a => a.organizationId === v.organizationId && a.status === 'active');
+    return { ...v, hasVoiceAssistant };
+  });
+  return sendResponse(res, 200, true, detailedVenues, 'Venues retrieved successfully');
 });
 
 app.post('/api/v1/venues', (req: Request, res: Response) => {
@@ -194,7 +206,8 @@ app.post('/api/v1/organizations/:orgId/managers', (req: Request, res: Response) 
     role: 'organization',
     name,
     isManager: true,
-    parentOrgId: orgId
+    parentOrgId: orgId,
+    password: 'password123'
   };
 
   users.push(newManager);
@@ -235,9 +248,10 @@ app.get('/api/v1/slots/discover', (req: Request, res: Response) => {
   let detailedResults = results.map(s => {
     const venue = venues.find(v => v.id === s.venueId);
     const org = users.find(u => u.id === venue?.organizationId);
+    const hasVoiceAssistant = voiceAssistants.some(a => a.organizationId === venue?.organizationId && a.status === 'active');
     return {
       ...s,
-      venue,
+      venue: venue ? { ...venue, hasVoiceAssistant } : null,
       organization: org ? { id: org.id, name: org.name } : null
     };
   });
@@ -678,6 +692,46 @@ app.get('/api/v1/bookings', (req: Request, res: Response) => {
   });
 
   return sendResponse(res, 200, true, detailedBookings, 'Bookings retrieved successfully');
+});
+
+// -------------------------------------------------------------
+// VOICE AI MODULE
+// -------------------------------------------------------------
+app.use('/api/v1/voice', webhookRoutes);
+
+app.post('/api/v1/voice/provision', async (req: Request, res: Response) => {
+  const { orgId, industry } = req.body;
+  if (!orgId || !industry) return sendResponse(res, 400, false, null, 'orgId and industry required');
+  try {
+    const assistant = await provisionAssistant(orgId, industry);
+    return sendResponse(res, 200, true, assistant, 'Assistant provisioned');
+  } catch (error: any) {
+    return sendResponse(res, 500, false, null, error.message);
+  }
+});
+
+app.get('/api/v1/voice/assistant', (req: Request, res: Response) => {
+  const { orgId } = req.query;
+  const assistant = voiceAssistants.find(a => a.organizationId === orgId);
+  return sendResponse(res, 200, true, assistant || null, 'Assistant retrieved');
+});
+
+app.get('/api/v1/voice/calls', async (req: Request, res: Response) => {
+  const { orgId } = req.query;
+  const assistant = voiceAssistants.find(a => a.organizationId === orgId);
+  if (!assistant || !assistant.vapiAssistantId) return sendResponse(res, 200, true, [], 'No calls');
+  try {
+    const config = getConfig();
+    if (!config.vapiApiKey) return sendResponse(res, 200, true, [], 'VAPI_API_KEY missing, showing no calls');
+    const calls = await getCalls({ assistantId: assistant.vapiAssistantId, limit: 50 }, config.vapiApiKey);
+    return sendResponse(res, 200, true, calls, 'Calls retrieved');
+  } catch (error: any) {
+    return sendResponse(res, 500, false, null, error.message);
+  }
+});
+
+app.get('/api/v1/voice/industries', (req: Request, res: Response) => {
+  return sendResponse(res, 200, true, industryTemplates, 'Industries retrieved');
 });
 
 // -------------------------------------------------------------
