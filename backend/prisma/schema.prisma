@@ -1,0 +1,204 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ORGANIZATION
+  PERFORMER
+}
+
+enum SlotStatus {
+  AVAILABLE
+  PENDING
+  BOOKED
+  BLOCKED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  passwordHash   String
+  role           Role
+  name           String
+  isManager      Boolean        @default(false)
+  parentOrgId    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organizations  Organization[]
+  performers     Performer[]
+  sentMessages   Message[]      @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
+  notifications  Notification[]
+  managedVenues  VenueManager[]
+
+  @@map("users")
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  venues      Venue[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+model Venue {
+  id             String         @id @default(uuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  address        String
+  description    String?
+  capacity       Int
+  type           String
+  equipment      String[]
+  policies       String[]
+  imageUrl       String?
+  calendars      Calendar[]
+  bookableSlots  BookableSlot[]
+  bookings       Booking[]
+  managers       VenueManager[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("venues")
+}
+
+model Calendar {
+  id        String   @id @default(uuid())
+  venueId   String
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("calendars")
+}
+
+model BookableSlot {
+  id          String       @id @default(uuid())
+  venueId     String
+  venue       Venue        @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  date        String       // YYYY-MM-DD
+  startTime   String       // HH:MM
+  endTime     String       // HH:MM
+  budget      Float
+  status      SlotStatus   @default(AVAILABLE)
+  performerId String?
+  performer   Performer?   @relation(fields: [performerId], references: [id], onDelete: SetNull)
+  bookings    Booking[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("bookable_slots")
+}
+
+model Performer {
+  id                   String         @id @default(uuid())
+  userId               String
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                 String
+  biography            String?
+  genres               String[]
+  pricing              Float
+  languages            String[]
+  experience           String?
+  travelRadius         Int
+  equipmentNeeded      String[]
+  imageUrl             String?
+  completionPercentage Int            @default(0)
+  bookableSlots        BookableSlot[]
+  bookings             Booking[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@map("performers")
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  slotId      String
+  slot        BookableSlot  @relation(fields: [slotId], references: [id], onDelete: Restrict)
+  venueId     String
+  venue       Venue         @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  performerId String
+  performer   Performer     @relation(fields: [performerId], references: [id], onDelete: Restrict)
+  date        String
+  startTime   String
+  endTime     String
+  budget      Float
+  status      BookingStatus @default(PENDING)
+  reviews     Review[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("bookings")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reviewerId  String
+  revieweeId  String
+  rating      Int
+  comment     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String
+  timestamp  DateTime @default(now())
+
+  @@map("messages")
+}
+
+model VenueManager {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  venueId   String
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, venueId])
+  @@map("venue_managers")
+}
