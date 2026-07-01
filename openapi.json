@@ -1,0 +1,115 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "StageHub API Specification",
+    "description": "API contract for StageHub Entertainment Marketplace. Provides endpoints for auth, venues, slots, bookings, chat, and reviews.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api/v1",
+      "description": "Mock Local Development Server"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Mock Login / Register",
+        "description": "Logs in any user based on their email. Auto-creates a new user and performer profile if it does not exist.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "org@stagehub.com" },
+                  "password": { "type": "string", "example": "password" },
+                  "role": { "type": "string", "enum": ["organization", "performer"], "example": "organization" }
+                },
+                "required": ["email", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login success details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string", "example": "mock-jwt-token" },
+                        "user": { "type": "object" },
+                        "performer": { "type": "object", "nullable": true }
+                      }
+                    },
+                    "message": { "type": "string", "example": "Login successful" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/venues": {
+      "get": {
+        "summary": "Get Venues List",
+        "responses": {
+          "200": {
+            "description": "List of venues"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Venue",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "organizationId": { "type": "string", "example": "u-org-1" },
+                  "name": { "type": "string", "example": "Sector 17 Cafe" },
+                  "address": { "type": "string", "example": "1024 Market St" },
+                  "capacity": { "type": "integer", "example": 50 },
+                  "type": { "type": "string", "example": "Café" },
+                  "equipment": { "type": "array", "items": { "type": "string" } }
+                },
+                "required": ["organizationId", "name", "address", "capacity", "type"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Venue created"
+          }
+        }
+      }
+    },
+    "/slots/discover": {
+      "get": {
+        "summary": "Search Bookable Slots",
+        "parameters": [
+          { "name": "location", "in": "query", "schema": { "type": "string" } },
+          { "name": "date", "in": "query", "schema": { "type": "string" } },
+          { "name": "budget", "in": "query", "schema": { "type": "integer" } },
+          { "name": "venueType", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching Available calendar slots"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "info": {
+    "_postman_id": "91a1fa93-b45c-4f5e-9a45-9c0e1f784749",
+    "name": "StageHub API Collection",
+    "description": "REST API collection for testing StageHub Entertainment Marketplace MVP endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Mock Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"org@stagehub.com\",\n  \"password\": \"password123\",\n  \"role\": \"organization\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/api/v1/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Venues",
+      "item": [
+        {
+          "name": "Get All Venues",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:3001/api/v1/venues"
+          }
+        },
+        {
+          "name": "Create Venue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"u-org-1\",\n  \"name\": \"Sector 22 Outdoor Patio\",\n  \"address\": \"500 Garden Ave, Sector 22\",\n  \"description\": \"Spacious open-air stage for high-capacity performances.\",\n  \"capacity\": 150,\n  \"type\": \"Brewery\",\n  \"equipment\": [\"2x PA Subwoofers\", \"4x Wireless Mics\"],\n  \"policies\": [\"10 PM Curfew\", \"No smoke machine\"],\n  \"imageUrl\": \"https://images.unsplash.com/photo-1516450360452-9312f5e86fc7\"\n}"
+            },
+            "url": "http://localhost:3001/api/v1/venues"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slots",
+      "item": [
+        {
+          "name": "Get Slots By Venue",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:3001/api/v1/slots?venueId=v-1"
+          }
+        },
+        {
+          "name": "Create Slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venueId\": \"v-1\",\n  \"date\": \"2026-07-10\",\n  \"startTime\": \"18:00\",\n  \"endTime\": \"21:00\",\n  \"budget\": 200,\n  \"status\": \"Available\"\n}"
+            },
+            "url": "http://localhost:3001/api/v1/slots"
+          }
+        },
+        {
+          "name": "Discover Open Slots",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:3001/api/v1/slots/discover?location=Cityville&budget=500"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Request Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"s-1\",\n  \"performerId\": \"p-1\"\n}"
+            },
+            "url": "http://localhost:3001/api/v1/bookings/request"
+          }
+        },
+        {
+          "name": "Approve Booking",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:3001/api/v1/bookings/b-1/approve"
+          }
+        }
+      ]
+    }
+  ]
+}
