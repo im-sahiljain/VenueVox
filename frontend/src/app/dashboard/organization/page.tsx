@@ -28,12 +28,14 @@ import {
   BookOpen,
   Search,
   Paperclip,
+  Mic,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { to12h, toLocalISOString } from "@/lib/utils";
 import Sidebar, { SidebarItem } from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
+import VoiceAITab from "@/components/VoiceAITab";
 import {
   RevenueChart,
   BookingFunnel,
@@ -62,6 +64,7 @@ export default function OrganizationDashboard() {
     | "reviews"
     | "managers"
     | "discover"
+    | "voiceai"
   >("overview");
 
   // Data State
@@ -170,12 +173,12 @@ export default function OrganizationDashboard() {
       : loggedUser.id;
     loadAllData(loggedUser, queryOrgId);
 
-    // Poll notifications and messages every 5 seconds
-    const interval = setInterval(() => {
-      refreshNotificationsAndMessages(loggedUser, queryOrgId);
-    }, 5000);
+    // Removed polling interval for stability testing
+    // const interval = setInterval(() => {
+    //   refreshNotificationsAndMessages(loggedUser, queryOrgId);
+    // }, 5000);
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [router]);
 
   const loadAllData = async (loggedUser: any, queryOrgId: string) => {
@@ -690,6 +693,7 @@ export default function OrganizationDashboard() {
       isPendingDot: unreadNotifCount > 0,
     },
     { id: "reviews", label: "Reviews", icon: Star },
+    { id: "voiceai", label: "Voice AI", icon: Mic },
     { id: "discover", label: "Find Performers", icon: Search },
     ...(!user?.isManager
       ? [
@@ -848,7 +852,7 @@ export default function OrganizationDashboard() {
                             <p className="text-xs text-slate-500 mt-1">
                               Date: {booking.date} | Time:{" "}
                               {to12h(booking.startTime)} -{" "}
-                              {to12h(booking.endTime)} | Offer: $
+                              {to12h(booking.endTime)} | Offer: ₹
                               {booking.budget}
                             </p>
                           </div>
@@ -882,6 +886,13 @@ export default function OrganizationDashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* -------------------------------------------------------------
+            TAB: VOICE AI
+            ------------------------------------------------------------- */}
+        {activeTab === "voiceai" && (
+          <VoiceAITab user={user} />
         )}
 
         {/* -------------------------------------------------------------
@@ -1699,7 +1710,7 @@ export default function OrganizationDashboard() {
                             </div>
                             <div className="text-xs text-slate-500">
                               {to12h(slot.startTime)} - {to12h(slot.endTime)} •
-                              ${slot.budget}
+                              ₹{slot.budget}
                             </div>
                           </div>
                         ))
@@ -1729,7 +1740,7 @@ export default function OrganizationDashboard() {
                               {slot.status}
                             </span>
                             <span className="text-xs font-bold text-slate-800 dark:text-white">
-                              ${slot.budget} budget
+                              ₹{slot.budget} budget
                             </span>
                           </div>
 
@@ -1819,7 +1830,7 @@ export default function OrganizationDashboard() {
 
                     <div>
                       <label className="block font-semibold mb-1">
-                        Gig Budget Offered ($)
+                        Gig Budget Offered (₹)
                       </label>
                       <input
                         type="number"
@@ -3106,7 +3117,7 @@ export default function OrganizationDashboard() {
                     {performerDetailsModal.name}
                   </h4>
                   <p className="text-xs text-rose-500 font-bold">
-                    ${performerDetailsModal.pricing}/Gig rate
+                    ₹{performerDetailsModal.pricing}/Gig rate
                   </p>
                 </div>
               </div>

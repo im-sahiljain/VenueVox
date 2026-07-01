@@ -51,11 +51,11 @@ export function RevenueChart({ bookings }: { bookings: any[] }) {
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} tickFormatter={(val) => `$${val}`} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} tickFormatter={(val) => `₹${val}`} />
             <RechartsTooltip 
               contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
               itemStyle={{ color: '#f43f5e', fontWeight: 'bold' }}
-              formatter={(value: number) => [`$${value}`, "Revenue"]}
+              formatter={(value: any) => [`₹${value}`, "Revenue"]}
             />
             <Area type="monotone" dataKey="revenue" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
           </AreaChart>

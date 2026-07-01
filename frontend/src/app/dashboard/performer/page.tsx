@@ -27,6 +27,7 @@ import {
   ShieldAlert,
   Search,
   Paperclip,
+  Mic,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { to12h, toLocalISOString } from "@/lib/utils";
@@ -154,15 +155,15 @@ export default function PerformerDashboard() {
       setLoading(false);
     }
 
-    // Poll notifications and messages every 5 seconds
-    const interval = setInterval(() => {
-      if (perfStr) {
-        const p = JSON.parse(perfStr);
-        refreshNotificationsAndMessages(loggedUser.id, p.id);
-      }
-    }, 5000);
+    // Removed polling interval for stability testing
+    // const interval = setInterval(() => {
+    //   if (perfStr) {
+    //     const p = JSON.parse(perfStr);
+    //     refreshNotificationsAndMessages(loggedUser.id, p.id);
+    //   }
+    // }, 5000);
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [router]);
 
   const loadAllData = async (userId: string, performerId: string) => {
@@ -451,7 +452,7 @@ export default function PerformerDashboard() {
       <Sidebar
         user={user}
         userAvatar={performer?.imageUrl}
-        userSubtitle={`$${performer?.pricing || 0}/Gig Rate`}
+        userSubtitle={`₹${performer?.pricing || 0}/Gig Rate`}
         items={sidebarItems}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -591,7 +592,7 @@ export default function PerformerDashboard() {
                         </div>
                         <div className="flex gap-2">
                           <span className="text-emerald-700 font-bold bg-emerald-50 px-3.5 py-2 rounded-xl text-xs flex items-center gap-1 dark:bg-emerald-950/20 dark:text-emerald-400">
-                            Payout: ${booking.budget}
+                            Payout: ₹{booking.budget}
                           </span>
                           <Button
                             variant="secondary"
@@ -998,6 +999,11 @@ export default function PerformerDashboard() {
                             <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
                               {venue?.name}
                             </h3>
+                            {venue?.hasVoiceAssistant && (
+                              <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900/50">
+                                <Mic className="w-2.5 h-2.5" /> AI Receptionist Active
+                              </span>
+                            )}
                             <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1 font-medium">
                               <MapPin className="w-3 h-3 text-rose-500" />
                               {venue?.address}
@@ -1105,7 +1111,7 @@ export default function PerformerDashboard() {
                             {to12h(booking.endTime)}
                           </p>
                           <span className="inline-block mt-2 text-xs text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full dark:bg-emerald-950/20 dark:text-emerald-400">
-                            Offer: ${booking.budget}
+                            Offer: ₹{booking.budget}
                           </span>
                         </div>
 
