@@ -1,0 +1,44 @@
+Here are UI elements worth adding, grouped by impact:
+
+📊 Overview / Analytics
+Revenue chart — a simple bar/line chart showing weekly or monthly payout totals per venue
+Booking funnel stats — Pending → Confirmed → Completed conversion rate as a visual funnel
+Occupancy heatmap — a monthly grid showing how densely booked each venue is (like GitHub contribution graph)
+Top performer card — "Most booked artist this month" with their avatar and stats
+🏟️ Venues Tab
+Venue availability badge — a pill on each venue card showing how many slots are open this week
+Quick slot count — "3 available · 2 pending · 1 booked" inline stats under the venue name
+Venue search/filter bar — filter cards by type (Café, Club, Resort) or capacity range
+Image gallery in venue detail modal — multiple photos, not just the cover image
+📅 Calendar / Slots
+Slot drag-to-select — click and drag across dates to bulk-create slots
+Colour-coded calendar legend — visible key for Available / Pending / Booked / Blocked colors
+Slot summary sidebar — when no date is selected, show a "next 7 days" summary list instead of empty state
+📋 Bookings Tab
+Filter/sort bar — filter by venue, performer, or status; sort by date or budget
+Bulk approve/reject — checkbox selection on pending bookings with a bulk action toolbar
+Booking timeline view — a horizontal Gantt-style strip showing all confirmed gigs across venues on a weekly axis
+Earnings summary card — total confirmed revenue this week / month at the top of the tab
+Export button — download bookings as CSV
+💬 Messages
+Unread badge count on the performer list sidebar items
+Message search — search across all conversations
+Typing indicator (even if mock) for realism
+File/image attachment button (UI only, non-functional is fine)
+🔔 Notifications
+Mark all as read button at the top
+Notification type icons — different icons for bookings, reviews, and messages
+Filter tabs — "All · Bookings · Reviews · System"
+⭐ Reviews Tab
+Star rating distribution bar chart — like Amazon's "43% 5-star" breakdown
+Average rating badge per venue
+Sentiment tags — auto-tag reviews as "Punctual", "Professional", "Great Energy" based on keywords
+🎭 Performer / Artist Discovery (new tab idea)
+Browse performers tab — let the org owner search and discover performers by genre, price, and radius without waiting for inbound requests
+Send invite — proactively send a slot offer to a performer
+🌐 Global Shell
+Dark/light mode toggle in the sidebar or header
+Keyboard shortcuts panel (e.g. G+V → go to Venues, G+B → Bookings)
+Global search bar (Cmd+K) to jump to any venue, booking, or performer by name
+Onboarding checklist — a dismissible "complete your setup" card for new org accounts showing % completion
+The highest-ROI additions would be the revenue chart on the Overview tab, booking filter/sort bar, and global Cmd+K search — they make the app feel genuinely production-grade rather than a prototype.
