@@ -26,6 +26,9 @@ services:
       - PORT=3001
       - DATABASE_URL=postgresql://postgres:password123@db:5432/stagehub_db?schema=public
       - JWT_SECRET=mock-secret-key-12345
+      - VAPI_API_KEY=${VAPI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:3001}
     depends_on:
       - db
 
@@ -39,6 +42,7 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+      - NEXT_PUBLIC_VAPI_PUBLIC_KEY=${NEXT_PUBLIC_VAPI_PUBLIC_KEY}
     depends_on:
       - backend
 

@@ -182,4 +182,32 @@ export const api = {
       body: JSON.stringify(manager),
     });
   },
+
+  // ==========================================
+  // VOICE AI API
+  // ==========================================
+  voice: {
+    // Provision or sync the Voice Assistant
+    provisionAssistant: async (orgId: string, industry: string): Promise<ApiRes<any>> => {
+      return request<ApiRes<any>>('/voice/provision', {
+        method: "POST",
+        body: JSON.stringify({ orgId, industry }),
+      });
+    },
+
+    // Get Assistant details
+    getAssistant: async (orgId: string): Promise<ApiRes<any>> => {
+      return request<ApiRes<any>>(`/voice/assistant?orgId=${orgId}`);
+    },
+
+    // Get Call History
+    getCalls: async (orgId: string): Promise<ApiRes<any[]>> => {
+      return request<ApiRes<any[]>>(`/voice/calls?orgId=${orgId}`);
+    },
+
+    // Get available industry templates
+    getIndustries: async (): Promise<ApiRes<any[]>> => {
+      return request<ApiRes<any[]>>('/voice/industries');
+    },
+  }
 };
