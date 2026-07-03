@@ -19,6 +19,8 @@ function LoginContent() {
   const [role, setRole] = useState<"organization" | "performer">(initialRole);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedState, setSelectedState] = useState("Punjab");
+  const [selectedCity, setSelectedCity] = useState("Chandigarh");
 
   useEffect(() => {
     // If already logged in, redirect
@@ -48,7 +50,7 @@ function LoginContent() {
     setError("");
 
     try {
-      const response = await api.login(email, role);
+      const response = await api.login(email, role, selectedState, selectedCity);
       if (response.success && response.data) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -59,6 +61,14 @@ function LoginContent() {
           );
         } else {
           localStorage.removeItem("performer");
+        }
+        if (response.data.organization) {
+          localStorage.setItem(
+            "organization",
+            JSON.stringify(response.data.organization),
+          );
+        } else {
+          localStorage.removeItem("organization");
         }
 
         // Redirect based on role
@@ -140,11 +150,11 @@ function LoginContent() {
               <Calendar className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">
-              Stage<span className="text-rose-500">Hub</span>
+              Venue<span className="text-rose-500">Vox</span>
             </span>
           </Link>
           <h2 className="text-center text-3xl font-extrabold text-slate-900">
-            Sign in to StageHub
+            Sign in to VenueVox
           </h2>
           <p className="mt-2 text-sm text-slate-500">
             Enter any email and password to log in.
@@ -224,6 +234,44 @@ function LoginContent() {
                   placeholder="••••••••"
                   className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-sm bg-white"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    State
+                  </label>
+                  <select
+                    value={selectedState}
+                    onChange={(e) => {
+                      setSelectedState(e.target.value);
+                      // Set default city based on state selection
+                      if (e.target.value === "Punjab") setSelectedCity("Chandigarh");
+                      else if (e.target.value === "Karnataka") setSelectedCity("Bengaluru");
+                      else if (e.target.value === "Maharashtra") setSelectedCity("Mumbai");
+                    }}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-sm bg-white"
+                  >
+                    <option value="Punjab">Punjab</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    City
+                  </label>
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-sm bg-white"
+                  >
+                    {selectedState === "Punjab" && <option value="Chandigarh">Chandigarh</option>}
+                    {selectedState === "Karnataka" && <option value="Bengaluru">Bengaluru</option>}
+                    {selectedState === "Maharashtra" && <option value="Mumbai">Mumbai</option>}
+                  </select>
+                </div>
               </div>
             </div>
 

@@ -1,14 +1,17 @@
-import { users, voiceAssistants, VoiceAssistant } from '../store';
+import { prisma } from '../lib/prisma';
 import { createAssistant, updateAssistant } from './vapi.service';
 import { generateVapiPayload, getIndustryTemplate } from '../templates/industries';
 import { getConfig } from '../config/env';
 
 /**
- * Provision or update a Vapi assistant for an organization
+ * Provision or update a Vapi assistant for an organization.
+ * Uses Prisma for all database operations.
  */
 export async function provisionAssistant(orgId: string, industryKey: string) {
-  // Get organization
-  const org = users.find(u => u.id === orgId && u.role === 'organization');
+  // Get organization from Prisma
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
   if (!org) {
     throw new Error('Organization not found.');
   }
@@ -21,78 +24,93 @@ export async function provisionAssistant(orgId: string, industryKey: string) {
 
   // Generate Vapi payload
   const config = getConfig();
-  const vapiPayload = generateVapiPayload(industryKey, org.name, config.backendUrl);
-
-  // Check for existing assistant
-  let assistantIndex = voiceAssistants.findIndex((a) => a.organizationId === orgId);
-  let assistant: VoiceAssistant;
+  const vapiPayload = generateVapiPayload(industryKey, org.name, config.backendUrl, orgId);
 
   const vapiApiKey = config.vapiApiKey;
   if (!vapiApiKey) {
     throw new Error('VAPI_API_KEY is not configured on the backend. Provisioning requires a valid API key.');
   }
 
-  try {
-    if (assistantIndex !== -1 && voiceAssistants[assistantIndex].vapiAssistantId) {
-      // UPDATE existing assistant
-      assistant = voiceAssistants[assistantIndex];
-      assistant.status = 'updating';
+  // Check for existing assistant in DB
+  let existing = await prisma.voiceAssistant.findUnique({
+    where: { organizationId: orgId },
+  });
 
-      const vapiResponse = await updateAssistant(
-        assistant.vapiAssistantId as string,
+  try {
+    if (existing && existing.vapiAssistantId) {
+      // UPDATE existing assistant on Vapi
+      await prisma.voiceAssistant.update({
+        where: { id: existing.id },
+        data: { status: 'updating' },
+      });
+
+      await updateAssistant(
+        existing.vapiAssistantId,
         vapiPayload,
         vapiApiKey
       );
 
-      assistant.name = vapiPayload.name;
-      assistant.industry = industryKey;
-      assistant.config = vapiPayload;
-      assistant.status = 'active';
-      assistant.lastSyncedAt = new Date().toISOString();
-      assistant.errorMessage = null;
-
-      return assistant;
-    } else {
-      // CREATE new assistant
-      if (assistantIndex !== -1) {
-        assistant = voiceAssistants[assistantIndex];
-        assistant.status = 'pending';
-      } else {
-        assistant = {
-          id: `va-${Date.now()}`,
-          organizationId: orgId,
-          vapiAssistantId: null,
+      const updated = await prisma.voiceAssistant.update({
+        where: { id: existing.id },
+        data: {
           name: vapiPayload.name,
           industry: industryKey,
-          config: vapiPayload,
-          status: 'pending',
+          config: vapiPayload as any,
+          status: 'active',
+          lastSyncedAt: new Date(),
           errorMessage: null,
-          lastSyncedAt: null,
-          createdAt: new Date().toISOString()
-        };
-        voiceAssistants.push(assistant);
+        },
+      });
+
+      return updated;
+    } else {
+      // CREATE new assistant on Vapi
+      if (existing) {
+        // Record exists but has no vapiAssistantId — mark pending
+        await prisma.voiceAssistant.update({
+          where: { id: existing.id },
+          data: { status: 'pending' },
+        });
+      } else {
+        // Create a new local record
+        existing = await prisma.voiceAssistant.create({
+          data: {
+            organizationId: orgId,
+            name: vapiPayload.name,
+            industry: industryKey,
+            config: vapiPayload as any,
+            status: 'pending',
+          },
+        });
       }
 
       const vapiResponse = await createAssistant(vapiPayload, vapiApiKey);
 
-      assistant.vapiAssistantId = vapiResponse.id;
-      assistant.name = vapiPayload.name;
-      assistant.industry = industryKey;
-      assistant.config = vapiPayload;
-      assistant.status = 'active';
-      assistant.lastSyncedAt = new Date().toISOString();
-      assistant.errorMessage = null;
+      const updated = await prisma.voiceAssistant.update({
+        where: { id: existing.id },
+        data: {
+          vapiAssistantId: vapiResponse.id,
+          name: vapiPayload.name,
+          industry: industryKey,
+          config: vapiPayload as any,
+          status: 'active',
+          lastSyncedAt: new Date(),
+          errorMessage: null,
+        },
+      });
 
-      return assistant;
+      return updated;
     }
   } catch (error: any) {
     // Mark assistant as failed
-    if (assistantIndex !== -1) {
-      voiceAssistants[assistantIndex].status = 'failed';
-      voiceAssistants[assistantIndex].errorMessage = error.message;
-    } else if (assistant!) {
-      assistant.status = 'failed';
-      assistant.errorMessage = error.message;
+    if (existing) {
+      await prisma.voiceAssistant.update({
+        where: { id: existing.id },
+        data: {
+          status: 'failed',
+          errorMessage: error.message,
+        },
+      });
     }
     throw error;
   }

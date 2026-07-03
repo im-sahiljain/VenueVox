@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "StageHub API Specification",
-    "description": "API contract for StageHub Entertainment Marketplace. Provides endpoints for auth, venues, slots, bookings, chat, and reviews.",
+    "title": "VenueVox API Specification",
+    "description": "API contract for VenueVox Entertainment Marketplace. Provides endpoints for auth, venues, slots, bookings, chat, and reviews.",
     "version": "1.0.0"
   },
   "servers": [

@@ -73,7 +73,7 @@ export function BookingTimeline({ bookings, venues = [], viewType }: BookingTime
   return (
     <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-850">
+      <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-850">
         <div>
           <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-rose-500" />
@@ -84,11 +84,11 @@ export function BookingTimeline({ bookings, venues = [], viewType }: BookingTime
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handlePrevWeek} className="h-8 px-3 rounded-lg text-xs">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+          <Button variant="outline" onClick={handlePrevWeek} className="h-8 px-3 rounded-lg text-xs flex-1 sm:flex-none">
             <ChevronLeft className="w-4 h-4 mr-1" /> Previous 7 Days
           </Button>
-          <Button variant="outline" onClick={handleNextWeek} className="h-8 px-3 rounded-lg text-xs">
+          <Button variant="outline" onClick={handleNextWeek} className="h-8 px-3 rounded-lg text-xs flex-1 sm:flex-none">
             Next 7 Days <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>

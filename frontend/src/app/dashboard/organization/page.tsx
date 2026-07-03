@@ -29,13 +29,15 @@ import {
   Search,
   Paperclip,
   Mic,
+  Menu,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, uploadImageToCloudinary } from "@/lib/api";
 import { to12h, toLocalISOString } from "@/lib/utils";
 import Sidebar, { SidebarItem } from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
 import VoiceAITab from "@/components/VoiceAITab";
+import { ImageSlideshow } from "@/components/ImageSlideshow";
 import {
   RevenueChart,
   BookingFunnel,
@@ -54,6 +56,7 @@ import { Button } from "@/components/ui/button";
 export default function OrganizationDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [organization, setOrganization] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<
     | "overview"
     | "venues"
@@ -66,6 +69,7 @@ export default function OrganizationDashboard() {
     | "discover"
     | "voiceai"
   >("overview");
+  const [isOpenOnMobile, setIsOpenOnMobile] = useState(false);
 
   // Data State
   const [venuesList, setVenuesList] = useState<any[]>([]);
@@ -91,6 +95,8 @@ export default function OrganizationDashboard() {
   );
   const [performerSearchQuery, setPerformerSearchQuery] = useState("");
   const [performerGenreFilter, setPerformerGenreFilter] = useState("All");
+  const [performerStateFilter, setPerformerStateFilter] = useState("All");
+  const [performerCityFilter, setPerformerCityFilter] = useState("All");
   const [performerMaxRate, setPerformerMaxRate] = useState(1000);
 
   // Form states
@@ -100,15 +106,19 @@ export default function OrganizationDashboard() {
   const [bookingSort, setBookingSort] = useState("dateAsc");
   const [showAddVenueModal, setShowAddVenueModal] = useState(false);
   const [editingVenue, setEditingVenue] = useState<any | null>(null);
+  const [pendingVenueProfileFile, setPendingVenueProfileFile] = useState<File | null>(null);
+  const [pendingVenueGalleryFiles, setPendingVenueGalleryFiles] = useState<File[]>([]);
   const [newVenueData, setNewVenueData] = useState({
     name: "",
     address: "",
     description: "",
-    capacity: 50,
+    capacity: 100,
     type: "Café",
     equipment: "",
     policies: "",
     imageUrl: "",
+    state: "Punjab",
+    city: "Chandigarh",
   });
 
   const [selectedCalendarVenue, setSelectedCalendarVenue] =
@@ -121,7 +131,7 @@ export default function OrganizationDashboard() {
     startTime: "19:00",
     endTime: "22:00",
     budget: 150,
-    status: "Available" as "Available" | "Blocked",
+    status: "AVAILABLE" as "AVAILABLE" | "BLOCKED",
   });
 
   const [performerDetailsModal, setPerformerDetailsModal] = useState<
@@ -168,10 +178,15 @@ export default function OrganizationDashboard() {
       return;
     }
     setUser(loggedUser);
+    
+    const orgStr = localStorage.getItem("organization");
+    const loggedOrg = orgStr ? JSON.parse(orgStr) : null;
+    setOrganization(loggedOrg);
+
     const queryOrgId = loggedUser.isManager
       ? loggedUser.parentOrgId
       : loggedUser.id;
-    loadAllData(loggedUser, queryOrgId);
+    loadAllData(loggedUser, queryOrgId, loggedOrg?.state, loggedOrg?.city);
 
     // Removed polling interval for stability testing
     // const interval = setInterval(() => {
@@ -181,14 +196,19 @@ export default function OrganizationDashboard() {
     // return () => clearInterval(interval);
   }, [router]);
 
-  const loadAllData = async (loggedUser: any, queryOrgId: string) => {
+  const loadAllData = async (
+    loggedUser: any,
+    queryOrgId: string,
+    orgState?: string,
+    orgCity?: string,
+  ) => {
     setLoading(true);
     try {
       // Venues
-      const resVenues = await api.getVenues();
-      let orgVenues = resVenues.data.filter(
-        (v) => v.organizationId === queryOrgId,
-      );
+      const resVenues = await api.getVenues({
+        organizationId: queryOrgId,
+      });
+      let orgVenues = resVenues.data;
       if (loggedUser.isManager) {
         orgVenues = orgVenues.filter(
           (v) => v.managerIds && v.managerIds.includes(loggedUser.id),
@@ -234,8 +254,11 @@ export default function OrganizationDashboard() {
       }
       setNotificationsList(orgNotif);
 
-      // Performers list for messaging
-      const resPerf = await api.getPerformers();
+      // Performers list for messaging (scoped to organization's location)
+      const resPerf = await api.getPerformers({
+        state: orgState && orgState !== "All" ? orgState : undefined,
+        city: orgCity && orgCity !== "All" ? orgCity : undefined,
+      });
       setPerformersList(resPerf.data);
 
       // Reviews
@@ -332,6 +355,8 @@ export default function OrganizationDashboard() {
           .map((i) => i.trim())
           .filter(Boolean),
         imageUrl: newVenueData.imageUrl,
+        state: newVenueData.state,
+        city: newVenueData.city,
       };
 
       const res = await api.createVenue(formattedData);
@@ -350,6 +375,8 @@ export default function OrganizationDashboard() {
           equipment: "",
           policies: "",
           imageUrl: "",
+          state: "Punjab",
+          city: "Chandigarh",
         });
         setSuccessMsg("Venue created successfully!");
       }
@@ -358,13 +385,35 @@ export default function OrganizationDashboard() {
     }
   };
 
+  const [isUploadingVenuePhoto, setIsUploadingVenuePhoto] = useState(false);
+
   const handleUpdateVenue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingVenue) return;
+    if (!editingVenue || !user) return;
     setErrorMsg("");
     setSuccessMsg("");
+    setIsUploadingVenuePhoto(true);
 
     try {
+      let finalImageUrl = editingVenue.imageUrl;
+      const orgId = user.isManager ? user.parentOrgId : user.id;
+      const venueFolder = `VenueVox/Organization/${orgId}/Venue/${editingVenue.id}/images`;
+
+      // 1. Upload pending profile image if any
+      if (pendingVenueProfileFile) {
+        finalImageUrl = await uploadImageToCloudinary(pendingVenueProfileFile, venueFolder);
+      }
+
+      // 2. Upload pending gallery files if any
+      let finalPhotos = [...(editingVenue.photos || [])];
+      if (pendingVenueGalleryFiles.length > 0) {
+        const uploadPromises = pendingVenueGalleryFiles.map(file =>
+          uploadImageToCloudinary(file, venueFolder)
+        );
+        const uploadedUrls = await Promise.all(uploadPromises);
+        finalPhotos = [...finalPhotos, ...uploadedUrls];
+      }
+
       const formattedData = {
         name: editingVenue.name,
         address: editingVenue.address,
@@ -383,7 +432,8 @@ export default function OrganizationDashboard() {
               .split(",")
               .map((i: string) => i.trim())
               .filter(Boolean),
-        imageUrl: editingVenue.imageUrl,
+        imageUrl: finalImageUrl,
+        photos: finalPhotos,
       };
 
       const res = await api.updateVenue(editingVenue.id, formattedData);
@@ -392,10 +442,104 @@ export default function OrganizationDashboard() {
           venuesList.map((v) => (v.id === editingVenue.id ? res.data : v)),
         );
         setEditingVenue(null);
+        setPendingVenueProfileFile(null);
+        setPendingVenueGalleryFiles([]);
         setSuccessMsg("Venue updated successfully!");
       }
     } catch (err: any) {
-      setErrorMsg(err.message);
+      setErrorMsg(err.message || "Failed to update venue.");
+    } finally {
+      setIsUploadingVenuePhoto(false);
+    }
+  };
+
+  const handleVenuePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setErrorMsg("");
+    setSuccessMsg("");
+    
+    const newFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > 1024 * 1024) {
+        setErrorMsg(`File "${file.name}" exceeds the 1MB limit.`);
+        continue;
+      }
+      newFiles.push(file);
+    }
+    setPendingVenueGalleryFiles((prev) => [...prev, ...newFiles]);
+    e.target.value = "";
+  };
+
+  const handleDeleteVenuePhoto = async (photoUrl: string) => {
+    if (!editingVenue) return;
+    if (!confirm("Are you sure you want to delete this venue photo permanently? This will also remove it from Cloudinary.")) return;
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      setIsUploadingVenuePhoto(true);
+      // 1. Delete from Cloudinary
+      await api.deleteMedia(photoUrl);
+
+      // 2. Remove from database
+      const currentPhotos = editingVenue.photos || [];
+      const updatedPhotos = currentPhotos.filter((p: string) => p !== photoUrl);
+
+      let newImageUrl = editingVenue.imageUrl;
+      if (editingVenue.imageUrl === photoUrl) {
+        newImageUrl = updatedPhotos.length > 0 ? updatedPhotos[0] : "";
+      }
+
+      const res = await api.updateVenue(editingVenue.id, {
+        photos: updatedPhotos,
+        imageUrl: newImageUrl
+      });
+
+      if (res.success) {
+        setEditingVenue((prev: any) => ({
+          ...prev,
+          photos: res.data.photos || [],
+          imageUrl: res.data.imageUrl || ""
+        }));
+        
+        setVenuesList((prevList: any[]) => 
+          prevList.map(v => (v.id === editingVenue.id ? { ...v, photos: res.data.photos, imageUrl: res.data.imageUrl } : v))
+        );
+        setSuccessMsg("Venue photo deleted successfully from database and Cloudinary!");
+      }
+    } catch (err: any) {
+      setErrorMsg("Failed to delete venue photo: " + (err.message || err));
+    } finally {
+      setIsUploadingVenuePhoto(false);
+    }
+  };
+
+  const handleSetPrimaryVenuePhoto = async (photoUrl: string) => {
+    if (!editingVenue) return;
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const res = await api.updateVenue(editingVenue.id, {
+        imageUrl: photoUrl
+      });
+
+      if (res.success) {
+        setEditingVenue((prev: any) => ({
+          ...prev,
+          imageUrl: res.data.imageUrl || ""
+        }));
+        
+        setVenuesList((prevList: any[]) => 
+          prevList.map(v => (v.id === editingVenue.id ? { ...v, imageUrl: res.data.imageUrl } : v))
+        );
+        setSuccessMsg("Primary venue photo updated successfully!");
+      }
+    } catch (err: any) {
+      setErrorMsg("Failed to set primary venue photo: " + err.message);
     }
   };
 
@@ -528,7 +672,7 @@ export default function OrganizationDashboard() {
       if (res.success) {
         setBookingsList(
           bookingsList.map((b) =>
-            b.id === bookingId ? { ...b, status: "Confirmed" } : b,
+            b.id === bookingId ? { ...b, status: "CONFIRMED" } : b,
           ),
         );
         // refresh slots
@@ -549,7 +693,7 @@ export default function OrganizationDashboard() {
       if (res.success) {
         setBookingsList(
           bookingsList.map((b) =>
-            b.id === bookingId ? { ...b, status: "Rejected" } : b,
+            b.id === bookingId ? { ...b, status: "REJECTED" } : b,
           ),
         );
         // refresh slots
@@ -706,9 +850,8 @@ export default function OrganizationDashboard() {
         ]
       : []),
   ];
-
   return (
-    <div className="min-h-screen bg-slate-55 text-slate-800 flex font-sans dark:bg-slate-955 dark:text-slate-100">
+    <div className="min-h-screen bg-slate-55 text-slate-800 flex flex-col md:flex-row font-sans dark:bg-slate-955 dark:text-slate-100">
       <GlobalSearch
         venues={venuesList}
         performers={performersList}
@@ -724,12 +867,31 @@ export default function OrganizationDashboard() {
         isSidebarCollapsed={isSidebarCollapsed}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
         handleLogout={handleLogout}
-        title={user?.isManager ? "StageHub Manager" : "StageHub Host"}
+        title={user?.isManager ? "VenueVox Manager" : "VenueVox Host"}
         logo={CalendarIcon}
+        isOpenOnMobile={isOpenOnMobile}
+        setIsOpenOnMobile={setIsOpenOnMobile}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 bg-slate-50 overflow-y-auto p-8 dark:bg-slate-900">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Mobile Header */}
+        <div className="md:hidden h-16 bg-slate-900 text-white flex items-center justify-between px-4 border-b border-slate-800 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsOpenOnMobile(true)}
+              className="text-slate-400 hover:text-white p-1 rounded-md cursor-pointer"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <span className="font-bold text-base">VenueVox</span>
+          </div>
+          <div className="w-8 h-8 bg-rose-500 text-white font-bold flex items-center justify-center rounded-lg uppercase text-xs">
+            {user?.name?.substring(0, 2) || "U"}
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <main className="flex-1 bg-slate-50 overflow-y-auto p-4 md:p-8 dark:bg-slate-900">
         {/* Banner Messages */}
         {errorMsg && (
           <div className="mb-6 bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-start gap-3 text-sm dark:bg-rose-950/20 dark:border-rose-900/50 dark:text-rose-400">
@@ -776,7 +938,7 @@ export default function OrganizationDashboard() {
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                 <CalendarIcon className="w-8 h-8 text-emerald-500 mb-4" />
                 <h3 className="text-2xl font-bold">
-                  {slotsList.filter((s) => s.status === "Available").length}
+                  {slotsList.filter((s) => s.status?.toUpperCase() === "AVAILABLE").length}
                 </h3>
                 <span className="text-slate-500 text-xs">
                   Open slots listed
@@ -785,7 +947,7 @@ export default function OrganizationDashboard() {
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                 <Briefcase className="w-8 h-8 text-amber-500 mb-4" />
                 <h3 className="text-2xl font-bold">
-                  {bookingsList.filter((b) => b.status === "Pending").length}
+                  {bookingsList.filter((b) => b.status?.toUpperCase() === "PENDING").length}
                 </h3>
                 <span className="text-slate-500 text-xs">
                   Pending gig requests
@@ -794,7 +956,7 @@ export default function OrganizationDashboard() {
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                 <Check className="w-8 h-8 text-blue-500 mb-4" />
                 <h3 className="text-2xl font-bold">
-                  {bookingsList.filter((b) => b.status === "Confirmed").length}
+                  {bookingsList.filter((b) => b.status?.toUpperCase() === "CONFIRMED").length}
                 </h3>
                 <span className="text-slate-500 text-xs">
                   Confirmed upcoming events
@@ -831,14 +993,14 @@ export default function OrganizationDashboard() {
                   </Button>
                 </div>
                 <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {bookingsList.filter((b) => b.status === "Pending").length ===
+                  {bookingsList.filter((b) => b.status?.toUpperCase() === "PENDING").length ===
                   0 ? (
                     <div className="p-6 text-center text-slate-500 text-sm">
                       No pending gig requests at this time.
                     </div>
                   ) : (
                     bookingsList
-                      .filter((b) => b.status === "Pending")
+                      .filter((b) => b.status?.toUpperCase() === "PENDING")
                       .map((booking) => (
                         <div
                           key={booking.id}
@@ -891,9 +1053,7 @@ export default function OrganizationDashboard() {
         {/* -------------------------------------------------------------
             TAB: VOICE AI
             ------------------------------------------------------------- */}
-        {activeTab === "voiceai" && (
-          <VoiceAITab user={user} />
-        )}
+        {activeTab === "voiceai" && <VoiceAITab user={user} orgId={user?.isManager ? user.parentOrgId : user?.id} />}
 
         {/* -------------------------------------------------------------
             TAB: VENUES LIST & CRUD
@@ -964,13 +1124,13 @@ export default function OrganizationDashboard() {
                     (s) => s.venueId === venue.id,
                   );
                   const availableCount = venueSlots.filter(
-                    (s) => s.status === "Available",
+                    (s) => s.status?.toUpperCase() === "AVAILABLE",
                   ).length;
                   const pendingCount = venueSlots.filter(
-                    (s) => s.status === "Pending",
+                    (s) => s.status?.toUpperCase() === "PENDING",
                   ).length;
                   const bookedCount = venueSlots.filter(
-                    (s) => s.status === "Booked",
+                    (s) => s.status?.toUpperCase() === "BOOKED",
                   ).length;
 
                   return (
@@ -1171,6 +1331,55 @@ export default function OrganizationDashboard() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block font-semibold mb-1">
+                        State *
+                      </label>
+                      <select
+                        value={newVenueData.state}
+                        onChange={(e) => {
+                          const s = e.target.value;
+                          let c = "Chandigarh";
+                          if (s === "Karnataka") c = "Bengaluru";
+                          else if (s === "Maharashtra") c = "Mumbai";
+                          setNewVenueData({
+                            ...newVenueData,
+                            state: s,
+                            city: c,
+                          });
+                        }}
+                        className="w-full p-3 rounded-xl border border-slate-350 bg-white text-slate-800 focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                      >
+                        <option value="Punjab">Punjab</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-semibold mb-1">City *</label>
+                      <select
+                        value={newVenueData.city}
+                        onChange={(e) =>
+                          setNewVenueData({
+                            ...newVenueData,
+                            city: e.target.value,
+                          })
+                        }
+                        className="w-full p-3 rounded-xl border border-slate-350 bg-white text-slate-800 focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                      >
+                        {newVenueData.state === "Punjab" && (
+                          <option value="Chandigarh">Chandigarh</option>
+                        )}
+                        {newVenueData.state === "Karnataka" && (
+                          <option value="Bengaluru">Bengaluru</option>
+                        )}
+                        {newVenueData.state === "Maharashtra" && (
+                          <option value="Mumbai">Mumbai</option>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold mb-1">
                         Capacity (guests) *
                       </label>
                       <input
@@ -1273,7 +1482,7 @@ export default function OrganizationDashboard() {
               }}
             >
               <DialogContent
-                className="max-w-lg w-full max-h-[90vh] overflow-y-auto p-8 bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-750 rounded-3xl"
+                className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-750 rounded-3xl"
                 showCloseButton={true}
               >
                 <DialogHeader className="mb-6">
@@ -1367,24 +1576,72 @@ export default function OrganizationDashboard() {
                           }
                           className="w-full p-3 rounded-xl border border-slate-350 bg-white text-slate-800 focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                         />
-                      </div>
                       <div>
-                        <label className="block font-semibold mb-1">
-                          Photo URL
+                        <label className="block font-semibold mb-1 flex items-center justify-between">
+                          <span>Photo / Cover Image</span>
+                          {pendingVenueProfileFile && (
+                            <span className="text-[10px] text-rose-500 font-bold animate-pulse">
+                              Pending Upload
+                            </span>
+                          )}
                         </label>
-                        <input
-                          type="text"
-                          value={editingVenue.imageUrl}
-                          onChange={(e) =>
-                            setEditingVenue({
-                              ...editingVenue,
-                              imageUrl: e.target.value,
-                            })
-                          }
-                          className="w-full p-3 rounded-xl border border-slate-350 bg-white text-slate-800 focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white"
-                        />
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-750">
+                              <img
+                                src={pendingVenueProfileFile ? URL.createObjectURL(pendingVenueProfileFile) : (editingVenue.imageUrl || "/avatar-placeholder.png")}
+                                alt="Venue Profile Preview"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <label className="flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold rounded-xl cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                <span>{pendingVenueProfileFile ? "Change Image" : "Upload Image"}</span>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      if (file.size > 1024 * 1024) {
+                                        setErrorMsg("Cover image size exceeds the 1MB limit.");
+                                        return;
+                                      }
+                                      setPendingVenueProfileFile(file);
+                                      setErrorMsg("");
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                            {pendingVenueProfileFile && (
+                              <button
+                                type="button"
+                                onClick={() => setPendingVenueProfileFile(null)}
+                                className="text-xs font-bold text-rose-500 hover:text-rose-600 transition"
+                              >
+                                Cancel
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={pendingVenueProfileFile ? `[Queued for upload: ${pendingVenueProfileFile.name}]` : editingVenue.imageUrl}
+                            disabled={!!pendingVenueProfileFile}
+                            onChange={(e) =>
+                              setEditingVenue({
+                                ...editingVenue,
+                                imageUrl: e.target.value,
+                              })
+                            }
+                            placeholder="Or paste an image URL here..."
+                            className="w-full p-3 rounded-xl border border-slate-350 bg-white text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                          />
+                        </div>
                       </div>
                     </div>
+                  </div>
                     <div>
                       <label className="block font-semibold mb-1">
                         Description
@@ -1442,11 +1699,123 @@ export default function OrganizationDashboard() {
                       />
                     </div>
 
+                    {/* Venue Gallery Section */}
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
+                      <h3 className="text-base font-bold tracking-tight mb-2">Venue Gallery</h3>
+                      <p className="text-slate-500 mb-4 text-xs">
+                        Add photos. Upload will happen when you save the form.
+                      </p>
+
+                      {/* Upload Dropzone */}
+                      <div className="mb-4">
+                        <label className="flex flex-col items-center justify-center border border-dashed border-slate-300 rounded-xl p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition dark:border-slate-700">
+                          <div className="flex flex-col items-center justify-center space-y-1">
+                            {isUploadingVenuePhoto ? (
+                              <div className="flex flex-col items-center space-y-1">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-rose-500"></div>
+                                <span className="text-xs text-slate-500">Processing images...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <ImageIcon className="h-5 w-5 text-slate-400" />
+                                <span className="text-xs font-semibold text-rose-500">Choose gallery photos</span>
+                                <span className="text-[10px] text-slate-400">PNG, JPG or WEBP up to 1MB (Multiple allowed)</span>
+                              </>
+                            )}
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            multiple
+                            disabled={isUploadingVenuePhoto}
+                            onChange={handleVenuePhotoUpload}
+                          />
+                        </label>
+                      </div>
+
+                      {/* Image Grid (Saved + Pending) */}
+                      {((editingVenue.photos && editingVenue.photos.length > 0) || pendingVenueGalleryFiles.length > 0) ? (
+                        <div className="grid grid-cols-3 gap-3">
+                          {/* Saved Photos */}
+                          {editingVenue.photos.map((photo: string, index: number) => {
+                            const isPrimary = editingVenue.imageUrl === photo;
+                            return (
+                              <div key={`saved-${index}`} className="group relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
+                                <img
+                                  src={photo}
+                                  alt={`Venue photo ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                {isPrimary && (
+                                  <div className="absolute top-1 left-1 bg-rose-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                                    Primary
+                                  </div>
+                                )}
+                                {/* Hover Overlay */}
+                                <div className="absolute inset-0 bg-slate-955/60 opacity-0 group-hover:opacity-100 transition duration-200 flex flex-col justify-end p-1.5 space-y-1">
+                                  {!isPrimary && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetPrimaryVenuePhoto(photo)}
+                                      className="w-full text-center text-[10px] font-semibold py-0.5 bg-white hover:bg-slate-100 text-slate-800 rounded shadow-sm transition cursor-pointer"
+                                    >
+                                      Primary
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteVenuePhoto(photo)}
+                                    className="w-full text-center text-[10px] font-semibold py-0.5 bg-rose-500 hover:bg-rose-600 text-white rounded shadow-sm transition cursor-pointer"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Pending Photos */}
+                          {pendingVenueGalleryFiles.map((file: File, index: number) => {
+                            const localUrl = URL.createObjectURL(file);
+                            return (
+                              <div key={`pending-${index}`} className="group relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 border-2 border-dashed border-rose-450 shadow-sm">
+                                <img
+                                  src={localUrl}
+                                  alt={`Pending photo ${index + 1}`}
+                                  className="w-full h-full object-cover opacity-85"
+                                />
+                                <div className="absolute top-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                                  Pending
+                                </div>
+                                {/* Hover Overlay */}
+                                <div className="absolute inset-0 bg-slate-955/60 opacity-0 group-hover:opacity-100 transition duration-200 flex flex-col justify-end p-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setPendingVenueGalleryFiles(prev => prev.filter((_, idx) => idx !== index))}
+                                    className="w-full text-center text-[10px] font-semibold py-0.5 bg-rose-500 hover:bg-rose-600 text-white rounded shadow-sm transition cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                          <ImageIcon className="h-6 w-6 text-slate-300 mx-auto mb-1" />
+                          <p className="text-slate-400 text-xs">No venue photos uploaded yet.</p>
+                        </div>
+                      )}
+                    </div>
+
                     <Button
                       type="submit"
-                      className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-6 rounded-xl transition mt-4 cursor-pointer"
+                      disabled={isUploadingVenuePhoto}
+                      className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-6 rounded-xl transition mt-4 cursor-pointer disabled:bg-slate-450"
                     >
-                      Update Details
+                      {isUploadingVenuePhoto ? "Updating & Uploading..." : "Update Details"}
                     </Button>
                   </form>
                 )}
@@ -1646,11 +2015,11 @@ export default function OrganizationDashboard() {
                             <span
                               key={slot.id}
                               className={`w-2.5 h-2.5 rounded-full ${
-                                slot.status === "Available"
+                                slot.status?.toUpperCase() === "AVAILABLE"
                                   ? "bg-emerald-500"
-                                  : slot.status === "Pending"
+                                  : slot.status?.toUpperCase() === "PENDING"
                                     ? "bg-amber-500"
-                                    : slot.status === "Booked"
+                                    : slot.status?.toUpperCase() === "BOOKED"
                                       ? "bg-blue-500"
                                       : "bg-slate-400"
                               }`}
@@ -1705,7 +2074,15 @@ export default function OrganizationDashboard() {
                                 {slot.date}
                               </span>
                               <span
-                                className={`w-2 h-2 rounded-full ${slot.status === "Available" ? "bg-emerald-500" : slot.status === "Pending" ? "bg-amber-500" : "bg-blue-500"}`}
+                                className={`w-2 h-2 rounded-full ${
+                                  slot.status?.toUpperCase() === "AVAILABLE"
+                                    ? "bg-emerald-500"
+                                    : slot.status?.toUpperCase() === "PENDING"
+                                      ? "bg-amber-500"
+                                      : slot.status?.toUpperCase() === "BOOKED"
+                                        ? "bg-blue-500"
+                                        : "bg-slate-400"
+                                }`}
                               />
                             </div>
                             <div className="text-xs text-slate-500">
@@ -1728,11 +2105,11 @@ export default function OrganizationDashboard() {
                           <div className="flex justify-between items-center">
                             <span
                               className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                slot.status === "Available"
+                                slot.status?.toUpperCase() === "AVAILABLE"
                                   ? "bg-emerald-100 text-emerald-800"
-                                  : slot.status === "Pending"
+                                  : slot.status?.toUpperCase() === "PENDING"
                                     ? "bg-amber-100 text-amber-800"
-                                    : slot.status === "Booked"
+                                    : slot.status?.toUpperCase() === "BOOKED"
                                       ? "bg-blue-100 text-blue-800"
                                       : "bg-slate-200 text-slate-750"
                               }`}
@@ -1752,7 +2129,7 @@ export default function OrganizationDashboard() {
                             <Button
                               variant="ghost"
                               onClick={() => handleDeleteSlot(slot.id)}
-                              disabled={slot.status === "Booked"}
+                              disabled={slot.status?.toUpperCase() === "BOOKED"}
                               className="text-rose-500 hover:text-rose-750 hover:bg-rose-50 disabled:opacity-30 text-xs font-semibold px-2 py-1 rounded transition cursor-pointer h-7"
                             >
                               Delete slot
@@ -1860,8 +2237,8 @@ export default function OrganizationDashboard() {
                         }
                         className="w-full p-2.5 rounded-xl border border-slate-350 bg-white text-slate-855 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                       >
-                        <option value="Available">Available for booking</option>
-                        <option value="Blocked">Blocked / Unavailable</option>
+                        <option value="AVAILABLE">Available for booking</option>
+                        <option value="BLOCKED">Blocked / Unavailable</option>
                       </select>
                     </div>
 
@@ -1892,7 +2269,11 @@ export default function OrganizationDashboard() {
               </p>
             </div>
 
-            <BookingTimeline bookings={bookingsList} venues={venuesList} viewType="organization" />
+            <BookingTimeline
+              bookings={bookingsList}
+              venues={venuesList}
+              viewType="organization"
+            />
 
             {/* Earnings Summary Card */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1989,7 +2370,7 @@ export default function OrganizationDashboard() {
                     .filter(
                       (b) =>
                         bookingStatusFilter === "All" ||
-                        b.status === bookingStatusFilter,
+                        b.status?.toUpperCase() === bookingStatusFilter.toUpperCase(),
                     )
                     .sort((a, b) => {
                       if (bookingSort === "dateAsc")
@@ -2008,7 +2389,7 @@ export default function OrganizationDashboard() {
                       const todayStr = toLocalISOString(new Date());
                       const isPast =
                         booking.date <= todayStr &&
-                        booking.status === "Confirmed";
+                        booking.status?.toUpperCase() === "CONFIRMED";
                       const hasOrgReview = reviewsList.some(
                         (r) =>
                           r.bookingId === booking.id &&
@@ -2035,11 +2416,11 @@ export default function OrganizationDashboard() {
                                 </h4>
                                 <span
                                   className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                    booking.status === "Confirmed"
+                                    booking.status?.toUpperCase() === "CONFIRMED"
                                       ? "bg-emerald-100 text-emerald-800"
-                                      : booking.status === "Pending"
+                                      : booking.status?.toUpperCase() === "PENDING"
                                         ? "bg-amber-100 text-amber-800"
-                                        : booking.status === "Rejected"
+                                        : booking.status?.toUpperCase() === "REJECTED"
                                           ? "bg-rose-100 text-rose-800"
                                           : "bg-slate-200"
                                   }`}
@@ -2064,7 +2445,7 @@ export default function OrganizationDashboard() {
                           </div>
 
                           <div className="flex gap-2">
-                            {booking.status === "Pending" && (
+                            {booking.status?.toUpperCase() === "PENDING" && (
                               <>
                                 <Button
                                   onClick={() =>
@@ -2134,11 +2515,11 @@ export default function OrganizationDashboard() {
             TAB: MESSAGES / CHAT
             ------------------------------------------------------------- */}
         {activeTab === "messages" && (
-          <div className="h-[calc(100vh-8rem)] flex bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <div className="h-[calc(100vh-8rem)] flex bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700 w-full min-w-0">
             {/* Chats List sidebar */}
-            <div className="w-80 border-r border-slate-150 flex flex-col dark:border-slate-700">
-              <div className="p-4 border-b border-slate-150 dark:border-slate-700 space-y-3">
-                <h3 className="font-bold text-slate-850 dark:text-white">
+            <div className={`w-full md:w-80 flex flex-col bg-slate-50/50 dark:bg-slate-900/10 ${activePerformerId ? "hidden md:flex" : "flex"}`}>
+              <div className="p-4 space-y-3 flex-shrink-0">
+                <h3 className="font-bold text-slate-855 dark:text-white">
                   Performers Chats
                 </h3>
                 <div className="relative">
@@ -2146,57 +2527,67 @@ export default function OrganizationDashboard() {
                   <input
                     type="text"
                     placeholder="Search messages..."
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-rose-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-rose-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                     value={messageSearchQuery}
                     onChange={(e) => setMessageSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-750">
+              <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
                 {performersList
                   .filter((p) =>
                     p.name
                       .toLowerCase()
                       .includes(messageSearchQuery.toLowerCase()),
                   )
-                  .map((perf) => (
-                    <button
-                      key={perf.id}
-                      onClick={() => startChat(perf)}
-                      className={`w-full text-left p-4 hover:bg-slate-50 transition flex items-center gap-3 ${
-                        activePerformerId === perf.id
-                          ? "bg-rose-50/40 dark:bg-slate-700/50"
-                          : "dark:hover:bg-slate-700/25"
-                      }`}
-                    >
-                      <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden flex-shrink-0">
-                        <img
-                          src={perf.imageUrl}
-                          alt={perf.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="overflow-hidden">
-                        <h4 className="font-bold text-xs truncate text-slate-900 dark:text-white">
-                          {perf.name}
-                        </h4>
-                        <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                          {perf.genres.join(", ")}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                  .map((perf) => {
+                    const isActive = activePerformerId === perf.id;
+                    return (
+                      <button
+                        key={perf.id}
+                        onClick={() => startChat(perf)}
+                        className={`w-full text-left p-3 rounded-2xl transition-all flex items-center gap-3 ${
+                          isActive
+                            ? "bg-white dark:bg-slate-800 shadow-md border-l-4 border-rose-500 scale-[1.01]"
+                            : "hover:bg-white/80 dark:hover:bg-slate-800/40 hover:shadow-sm"
+                        }`}
+                      >
+                        <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden flex-shrink-0">
+                          <img
+                            src={perf.imageUrl}
+                            alt={perf.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="overflow-hidden">
+                          <h4 className="font-bold text-xs truncate text-slate-900 dark:text-white">
+                            {perf.name}
+                          </h4>
+                          <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                            {perf.genres.join(", ")}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
 
             {/* Active chat window */}
-            <div className="flex-1 flex flex-col justify-between bg-slate-50/50 dark:bg-slate-900/30">
+            <div className={`flex-1 flex flex-col justify-between bg-slate-100/30 dark:bg-slate-950/10 min-w-0 ${activePerformerId ? "flex" : "hidden md:flex"}`}>
               {activePerformerId ? (
                 <>
                   {/* Chat header */}
-                  <div className="px-6 py-4 bg-white border-b border-slate-150 flex items-center justify-between dark:bg-slate-800 dark:border-slate-700">
-                    <div className="flex items-center gap-3">
-                      <h4 className="font-bold text-slate-900 dark:text-white">
+                  <div className="px-6 py-4 bg-white flex items-center justify-between dark:bg-slate-800 shadow-sm z-10 flex-shrink-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        onClick={() => setActivePerformerId(null)}
+                        className="md:hidden text-slate-500 hover:text-slate-900 p-1 mr-1 rounded-md hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 flex-shrink-0"
+                        title="Back to Chats"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <h4 className="font-bold text-slate-900 dark:text-white truncate text-sm md:text-base">
                         {
                           performersList.find((p) => p.id === activePerformerId)
                             ?.name
@@ -2243,7 +2634,7 @@ export default function OrganizationDashboard() {
                   </div>
 
                   {/* Chat input form */}
-                  <div className="p-4 bg-white border-t border-slate-150 dark:bg-slate-800 dark:border-slate-700">
+                  <div className="p-4 bg-white dark:bg-slate-800 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] z-10 flex-shrink-0">
                     {/* Quick Replies */}
                     <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
                       {[
@@ -2264,26 +2655,14 @@ export default function OrganizationDashboard() {
                     </div>
 
                     <form onSubmit={handleSendMessage} className="flex gap-2">
-                      <button
-                        type="button"
-                        className="p-3 text-slate-400 hover:text-slate-600 bg-slate-50 rounded-xl border border-slate-200 transition dark:bg-slate-900 dark:border-slate-700 dark:hover:text-white"
-                      >
-                        <Paperclip className="w-4 h-4" />
-                      </button>
                       <div className="flex-1 relative">
                         <input
                           type="text"
                           value={newMessageText}
                           onChange={(e) => setNewMessageText(e.target.value)}
                           placeholder="Type a message..."
-                          className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-xs pr-10 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-xs dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                         />
-                        {newMessageText.length > 0 && (
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                          </span>
-                        )}
                       </div>
                       <Button
                         type="submit"
@@ -2639,6 +3018,40 @@ export default function OrganizationDashboard() {
                   <option value="Electronic">Electronic</option>
                 </select>
               </div>
+              <div className="w-full md:w-48">
+                <select
+                  value={performerStateFilter}
+                  onChange={(e) => {
+                    setPerformerStateFilter(e.target.value);
+                    setPerformerCityFilter("All");
+                  }}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                >
+                  <option value="All">All States</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                </select>
+              </div>
+              <div className="w-full md:w-48">
+                <select
+                  value={performerCityFilter}
+                  onChange={(e) => setPerformerCityFilter(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  disabled={performerStateFilter === "All"}
+                >
+                  <option value="All">All Cities</option>
+                  {performerStateFilter === "Punjab" && (
+                    <option value="Chandigarh">Chandigarh</option>
+                  )}
+                  {performerStateFilter === "Karnataka" && (
+                    <option value="Bengaluru">Bengaluru</option>
+                  )}
+                  {performerStateFilter === "Maharashtra" && (
+                    <option value="Mumbai">Mumbai</option>
+                  )}
+                </select>
+              </div>
               <div className="w-full md:w-48 flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
                 <span className="text-xs font-semibold text-slate-500 w-16">
                   Max: ₹{performerMaxRate}
@@ -2671,7 +3084,19 @@ export default function OrganizationDashboard() {
                     performerGenreFilter === "All" ||
                     p.genres.includes(performerGenreFilter);
                   const matchRate = p.pricing <= performerMaxRate;
-                  return matchSearch && matchGenre && matchRate;
+                  const matchState =
+                    performerStateFilter === "All" ||
+                    p.state === performerStateFilter;
+                  const matchCity =
+                    performerCityFilter === "All" ||
+                    p.city === performerCityFilter;
+                  return (
+                    matchSearch &&
+                    matchGenre &&
+                    matchRate &&
+                    matchState &&
+                    matchCity
+                  );
                 })
                 .map((perf) => (
                   <div
@@ -2692,8 +3117,13 @@ export default function OrganizationDashboard() {
                         <h3 className="text-xl font-bold truncate">
                           {perf.name}
                         </h3>
-                        <p className="text-xs text-white/80 truncate mt-1">
-                          {perf.genres.join(", ")}
+                        <p className="text-xs text-white/80 truncate mt-1 flex justify-between items-center">
+                          <span>{perf.genres.join(", ")}</span>
+                          {perf.city && perf.state && (
+                            <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                              {perf.city}, {perf.state}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -2927,38 +3357,14 @@ export default function OrganizationDashboard() {
 
           {selectedVenueDetails && (
             <div className="space-y-6 text-sm">
-              {selectedVenueDetails.imageUrl && (
-                <div className="grid grid-cols-2 gap-2 h-48 rounded-2xl overflow-hidden shadow-inner">
-                  <div className="col-span-1 h-full relative group cursor-pointer">
-                    <img
-                      src={selectedVenueDetails.imageUrl}
-                      alt={selectedVenueDetails.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="col-span-1 grid grid-rows-2 gap-2 h-full">
-                    <div className="row-span-1 relative group cursor-pointer">
-                      <img
-                        src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800"
-                        alt="Venue interior 1"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                    <div className="row-span-1 relative group cursor-pointer">
-                      <img
-                        src="https://images.unsplash.com/photo-1470229722913-7c092db656dd?w=800"
-                        alt="Venue interior 2"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-white font-semibold text-xs">
-                          View all photos
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="relative rounded-2xl overflow-hidden bg-slate-950">
+                <ImageSlideshow
+                  images={[
+                    selectedVenueDetails.imageUrl,
+                    ...(selectedVenueDetails.photos || [])
+                  ].filter(Boolean)}
+                />
+              </div>
 
               <div>
                 <h4 className="text-2xl font-extrabold tracking-tight">
@@ -3104,22 +3510,23 @@ export default function OrganizationDashboard() {
 
           {performerDetailsModal && (
             <div className="space-y-6 text-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-slate-150 overflow-hidden flex-shrink-0">
-                  <img
-                    src={performerDetailsModal.imageUrl}
-                    alt={performerDetailsModal.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-lg font-bold">
-                    {performerDetailsModal.name}
-                  </h4>
-                  <p className="text-xs text-rose-500 font-bold">
-                    ₹{performerDetailsModal.pricing}/Gig rate
-                  </p>
-                </div>
+              {/* Performer Photos Slideshow */}
+              <div className="relative rounded-2xl overflow-hidden bg-slate-950">
+                <ImageSlideshow
+                  images={[
+                    performerDetailsModal.imageUrl,
+                    ...(performerDetailsModal.photos || [])
+                  ].filter(Boolean)}
+                />
+              </div>
+
+              <div>
+                <h4 className="text-xl font-extrabold">
+                  {performerDetailsModal.name}
+                </h4>
+                <p className="text-sm text-rose-500 font-bold mt-0.5">
+                  ₹{performerDetailsModal.pricing} / Gig rate
+                </p>
               </div>
 
               <div>
@@ -3264,6 +3671,7 @@ export default function OrganizationDashboard() {
           </form>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

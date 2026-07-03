@@ -28,16 +28,20 @@ export interface ApiRes<T> {
 
 export const api = {
   // Auth
-  login: async (email: string, role: 'organization' | 'performer') => {
-    return request<ApiRes<{ token: string; user: any; performer: any }>>('/auth/login', {
+  login: async (email: string, role: 'organization' | 'performer', state?: string, city?: string) => {
+    return request<ApiRes<{ token: string; user: any; performer?: any; organization?: any }>>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password: 'dummy-password', role }),
+      body: JSON.stringify({ email, password: 'dummy-password', role, state, city }),
     });
   },
 
   // Venues
-  getVenues: async () => {
-    return request<ApiRes<any[]>>('/venues');
+  getVenues: async (filters: { state?: string; city?: string; organizationId?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.state) params.append('state', filters.state);
+    if (filters.city) params.append('city', filters.city);
+    if (filters.organizationId) params.append('organizationId', filters.organizationId);
+    return request<ApiRes<any[]>>(`/venues?${params.toString()}`);
   },
   createVenue: async (venue: any) => {
     return request<ApiRes<any>>('/venues', {
@@ -86,6 +90,8 @@ export const api = {
     genre?: string;
     venueType?: string;
     equipment?: string;
+    state?: string;
+    city?: string;
   } = {}) => {
     const params = new URLSearchParams();
     if (filters.location) params.append('location', filters.location);
@@ -94,6 +100,8 @@ export const api = {
     if (filters.genre) params.append('genre', filters.genre);
     if (filters.venueType) params.append('venueType', filters.venueType);
     if (filters.equipment) params.append('equipment', filters.equipment);
+    if (filters.state) params.append('state', filters.state);
+    if (filters.city) params.append('city', filters.city);
 
     return request<ApiRes<any[]>>(`/slots/discover?${params.toString()}`);
   },
@@ -123,8 +131,11 @@ export const api = {
   },
 
   // Performers
-  getPerformers: async () => {
-    return request<ApiRes<any[]>>('/performers');
+  getPerformers: async (filters: { state?: string; city?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.state) params.append('state', filters.state);
+    if (filters.city) params.append('city', filters.city);
+    return request<ApiRes<any[]>>(`/performers?${params.toString()}`);
   },
   getPerformer: async (id: string) => {
     return request<ApiRes<any>>(`/performers/${id}`);
@@ -209,5 +220,41 @@ export const api = {
     getIndustries: async (): Promise<ApiRes<any[]>> => {
       return request<ApiRes<any[]>>('/voice/industries');
     },
+
+    // Delete media from Cloudinary via backend
+    deleteMedia: async (url: string): Promise<ApiRes<any>> => {
+      return request<ApiRes<any>>('/media/delete', {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
   }
+};
+
+export const uploadImageToCloudinary = async (file: File, folderPath: string): Promise<string> => {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dj9wuxc1s";
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "venuevox_unsigned";
+  
+  if (file.size > 1024 * 1024) {
+    throw new Error("File size exceeds the 1MB limit. Please compress or select another photo.");
+  }
+  
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+  formData.append("folder", folderPath);
+  
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData
+  });
+  
+  if (!res.ok) {
+    const errData = await res.json();
+    throw new Error(errData.error?.message || "Failed to upload image to Cloudinary");
+  }
+  
+  const data = await res.json();
+  return data.secure_url;
 };

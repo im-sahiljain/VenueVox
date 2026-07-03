@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { LogOut, ChevronLeft, ChevronRight, LucideIcon, Sun, Moon, Search } from "lucide-react";
+import {
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  LucideIcon,
+  Sun,
+  Moon,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface SidebarItem {
@@ -25,6 +33,8 @@ interface SidebarProps {
   handleLogout: () => void;
   title: string;
   logo: LucideIcon;
+  isOpenOnMobile?: boolean;
+  setIsOpenOnMobile?: (open: boolean) => void;
 }
 
 export default function Sidebar({
@@ -39,11 +49,13 @@ export default function Sidebar({
   handleLogout,
   title,
   logo: LogoIcon,
+  isOpenOnMobile,
+  setIsOpenOnMobile,
 }: SidebarProps) {
   const [isDarkMode, setIsDarkMode] = React.useState(false);
 
   React.useEffect(() => {
-    // Check initial preference
+    // Check initial preference from DOM (which is initialized by root layout script)
     if (document.documentElement.classList.contains("dark")) {
       setIsDarkMode(true);
     }
@@ -52,22 +64,50 @@ export default function Sidebar({
   const toggleDarkMode = () => {
     if (isDarkMode) {
       document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
       setIsDarkMode(false);
     } else {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
       setIsDarkMode(true);
     }
   };
 
   const openSearch = () => {
     // Dispatch a keyboard event to trigger GlobalSearch
-    const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true });
+    const event = new KeyboardEvent("keydown", { key: "k", metaKey: true });
     document.dispatchEvent(event);
   };
 
   return (
-    <aside className={`relative bg-slate-900 text-slate-400 flex flex-col border-r border-slate-800 h-screen sticky top-0 flex-shrink-0 overflow-y-auto overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? "w-20" : "w-64"}`}>
-      <div className={`h-16 flex items-center border-b border-slate-800 transition-all ${isSidebarCollapsed ? "justify-center px-2" : "justify-between px-4"}`}>
+    <>
+      {/* Mobile backdrop */}
+      {isOpenOnMobile && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity"
+          onClick={() => setIsOpenOnMobile?.(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed md:sticky top-0 bottom-0 left-0 z-45 md:z-auto flex flex-col bg-slate-900 text-slate-400 border-r border-slate-800 h-screen flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? "w-20" : "w-64"} ${isOpenOnMobile ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+      >
+      {/* Centered Absolute Toggle Button on the border */}
+      <Button
+        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        className="hidden md:flex absolute z-50 bg-rose-500 text-white p-0 rounded-full shadow-lg border border-slate-700 -right-3 top-5 hover:bg-rose-600 transition items-center justify-center cursor-pointer h-6 w-6"
+        title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      >
+        {isSidebarCollapsed ? (
+          <ChevronRight className="w-3.5 h-3.5" />
+        ) : (
+          <ChevronLeft className="w-3.5 h-3.5" />
+        )}
+      </Button>
+
+      <div
+        className={`h-16 flex items-center border-b border-slate-800 transition-all ${isSidebarCollapsed ? "justify-center px-2" : "justify-between px-4"}`}
+      >
         <div className="flex items-center gap-2 overflow-hidden">
           <div className="bg-rose-500 text-white p-1.5 rounded-lg flex-shrink-0">
             <LogoIcon className="w-5 h-5" />
@@ -78,24 +118,6 @@ export default function Sidebar({
             </span>
           )}
         </div>
-        {!isSidebarCollapsed ? (
-          <Button
-            variant="ghost"
-            onClick={() => setIsSidebarCollapsed(true)}
-            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition flex-shrink-0 cursor-pointer h-8 w-8"
-            title="Collapse Sidebar"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setIsSidebarCollapsed(false)}
-            className="absolute z-50 bg-rose-500 text-white p-0 rounded-full shadow-lg border border-slate-700 -right-3 top-5 hover:bg-rose-600 transition flex items-center justify-center cursor-pointer h-6 w-6"
-            title="Expand Sidebar"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Button>
-        )}
       </div>
 
       <div className="p-3">
@@ -103,7 +125,11 @@ export default function Sidebar({
           <div className="flex justify-center">
             {userAvatar ? (
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-700 shadow-md">
-                <img src={userAvatar} alt={user?.name} className="w-full h-full object-cover" />
+                <img
+                  src={userAvatar}
+                  alt={user?.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
             ) : (
               <div className="w-10 h-10 bg-rose-500 text-white font-bold flex items-center justify-center rounded-lg uppercase flex-shrink-0 shadow-md">
@@ -115,7 +141,11 @@ export default function Sidebar({
           <div className="flex items-center gap-3 p-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
             {userAvatar ? (
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-700">
-                <img src={userAvatar} alt={user?.name} className="w-full h-full object-cover" />
+                <img
+                  src={userAvatar}
+                  alt={user?.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
             ) : (
               <div className="w-10 h-10 bg-rose-500 text-white font-bold flex items-center justify-center rounded-lg uppercase flex-shrink-0">
@@ -134,18 +164,25 @@ export default function Sidebar({
         )}
       </div>
 
-      <nav className={`flex-1 space-y-1 ${isSidebarCollapsed ? "px-2" : "px-3"}`}>
+      <nav
+        className={`flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${isSidebarCollapsed ? "px-2" : "px-3"}`}
+      >
         {items.map((item) => {
           const ItemIcon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <Button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsOpenOnMobile?.(false);
+              }}
               title={isSidebarCollapsed ? item.label : ""}
               variant={isActive ? "default" : "ghost"}
               className={`w-full flex items-center justify-start transition relative group h-10 ${
-                isSidebarCollapsed ? "px-1 py-2.5 justify-center" : "gap-3 px-3 py-2.5"
+                isSidebarCollapsed
+                  ? "px-1 py-2.5 justify-center"
+                  : "gap-3 px-3 py-2.5"
               } rounded-xl text-sm font-semibold cursor-pointer ${
                 isActive
                   ? "bg-rose-500 text-white hover:bg-rose-600 hover:text-white"
@@ -156,19 +193,31 @@ export default function Sidebar({
               {!isSidebarCollapsed && (
                 <>
                   <span>{item.label}</span>
-                  {item.badge !== undefined && item.badge !== null && item.badge !== "" && (
-                    <span className={`ml-auto ${item.badgeColor || "bg-slate-800 text-slate-300"} text-xs px-2 py-0.5 rounded-full font-bold`}>
-                      {item.badge}
-                    </span>
-                  )}
+                  {item.badge !== undefined &&
+                    item.badge !== null &&
+                    item.badge !== "" && (
+                      <span
+                        className={`ml-auto ${item.badgeColor || "bg-slate-800 text-slate-300"} text-xs px-2 py-0.5 rounded-full font-bold`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
                 </>
               )}
               {isSidebarCollapsed && item.isPendingDot && (
-                <span className={`absolute top-2 right-2 w-2 h-2 rounded-full ${item.badgeColor?.includes("rose") || item.badgeColor?.includes("red") ? "bg-rose-500" : "bg-amber-500"}`} />
+                <span
+                  className={`absolute top-2 right-2 w-2 h-2 rounded-full ${item.badgeColor?.includes("rose") || item.badgeColor?.includes("red") ? "bg-rose-500" : "bg-amber-500"}`}
+                />
               )}
               {isSidebarCollapsed && (
                 <div className="absolute left-full ml-3 px-2 py-1 bg-slate-955 text-white text-xs font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50 shadow-xl border border-slate-800">
-                  {item.label} {item.badge !== undefined && item.badge !== null && item.badge !== "" && item.badge !== 0 ? `(${item.badge})` : ""}
+                  {item.label}{" "}
+                  {item.badge !== undefined &&
+                  item.badge !== null &&
+                  item.badge !== "" &&
+                  item.badge !== 0
+                    ? `(${item.badge})`
+                    : ""}
                 </div>
               )}
             </Button>
@@ -177,7 +226,9 @@ export default function Sidebar({
       </nav>
 
       {/* Utilities Section */}
-      <div className={`px-3 py-2 space-y-1 border-t border-slate-800 ${isSidebarCollapsed ? "px-2" : ""}`}>
+      <div
+        className={`px-3 py-2 space-y-1 border-t border-slate-800 ${isSidebarCollapsed ? "px-2" : ""}`}
+      >
         <Button
           onClick={openSearch}
           title={isSidebarCollapsed ? "Global Search (⌘K)" : ""}
@@ -190,7 +241,9 @@ export default function Sidebar({
           {!isSidebarCollapsed && (
             <>
               <span>Search</span>
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-500 border border-slate-700 font-mono">⌘K</span>
+              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-500 border border-slate-700 font-mono">
+                ⌘K
+              </span>
             </>
           )}
           {isSidebarCollapsed && (
@@ -202,14 +255,22 @@ export default function Sidebar({
 
         <Button
           onClick={toggleDarkMode}
-          title={isSidebarCollapsed ? (isDarkMode ? "Light Mode" : "Dark Mode") : ""}
+          title={
+            isSidebarCollapsed ? (isDarkMode ? "Light Mode" : "Dark Mode") : ""
+          }
           variant="ghost"
           className={`w-full flex items-center justify-start transition relative group h-10 ${
             isSidebarCollapsed ? "p-2.5 justify-center" : "gap-3 px-3 py-2.5"
           } rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white text-left cursor-pointer`}
         >
-          {isDarkMode ? <Sun className="w-4 h-4 flex-shrink-0" /> : <Moon className="w-4 h-4 flex-shrink-0" />}
-          {!isSidebarCollapsed && <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>}
+          {isDarkMode ? (
+            <Sun className="w-4 h-4 flex-shrink-0" />
+          ) : (
+            <Moon className="w-4 h-4 flex-shrink-0" />
+          )}
+          {!isSidebarCollapsed && (
+            <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+          )}
           {isSidebarCollapsed && (
             <div className="absolute left-full ml-3 px-2 py-1 bg-slate-955 text-white text-xs font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50 shadow-xl border border-slate-800">
               {isDarkMode ? "Light Mode" : "Dark Mode"}
@@ -237,5 +298,6 @@ export default function Sidebar({
         </Button>
       </div>
     </aside>
+  </>
   );
 }

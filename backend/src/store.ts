@@ -6,6 +6,8 @@ export interface User {
   parentOrgId?: string;
   isManager?: boolean;
   password: string;
+  state?: string;
+  city?: string;
 }
 
 export interface Venue {
@@ -20,6 +22,8 @@ export interface Venue {
   policies: string[];
   imageUrl: string;
   managerIds?: string[];
+  state?: string;
+  city?: string;
 }
 
 export interface BookableSlot {
@@ -46,6 +50,8 @@ export interface Performer {
   equipmentNeeded: string[];
   imageUrl: string;
   completionPercentage: number;
+  state?: string;
+  city?: string;
 }
 
 export interface Booking {
@@ -128,6 +134,8 @@ export const users: User[] = [
     password: "org1@stagehub",
     role: "organization",
     name: "ABC Hospitality Group",
+    state: "Punjab",
+    city: "Chandigarh",
   },
   {
     id: "u-org-2",
@@ -135,6 +143,8 @@ export const users: User[] = [
     password: "org2@stagehub",
     role: "organization",
     name: "XYZ Entertainment Group",
+    state: "Karnataka",
+    city: "Bengaluru",
   },
 
   // Owner 1 Managers (ABC)
@@ -201,9 +211,9 @@ export const users: User[] = [
   },
 ];
 
-// ── Venues (5 venues, unchanged) ──────────────────────────────────────
+// ── Venues
+
 export const venues: Venue[] = [
-  // ABC Group Venues (Owner 1)
   {
     id: "v-1",
     organizationId: "u-org-1",
@@ -222,6 +232,8 @@ export const venues: Venue[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop&q=80",
     managerIds: ["u-mgr-1"],
+    state: "Punjab",
+    city: "Chandigarh",
   },
   {
     id: "v-2",
@@ -246,6 +258,8 @@ export const venues: Venue[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80",
     managerIds: ["u-mgr-2"],
+    state: "Punjab",
+    city: "Chandigarh",
   },
   {
     id: "v-5",
@@ -271,6 +285,8 @@ export const venues: Venue[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&auto=format&fit=crop&q=80",
     managerIds: [],
+    state: "Maharashtra",
+    city: "Mumbai",
   },
 
   // XYZ Group Venues (Owner 2)
@@ -296,6 +312,8 @@ export const venues: Venue[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80",
     managerIds: ["u-mgr-3"],
+    state: "Karnataka",
+    city: "Bengaluru",
   },
   {
     id: "v-4",
@@ -319,6 +337,8 @@ export const venues: Venue[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1570560258879-af7f8e1447ac?w=800&auto=format&fit=crop&q=80",
     managerIds: ["u-mgr-4"],
+    state: "Karnataka",
+    city: "Bengaluru",
   },
 ];
 
@@ -343,6 +363,8 @@ export const performers: Performer[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80",
     completionPercentage: 90,
+    state: "Karnataka",
+    city: "Bengaluru",
   },
   {
     id: "p-2",
@@ -363,6 +385,8 @@ export const performers: Performer[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?w=800&auto=format&fit=crop&q=80",
     completionPercentage: 95,
+    state: "Maharashtra",
+    city: "Mumbai",
   },
   {
     id: "p-3",
@@ -380,6 +404,8 @@ export const performers: Performer[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1585699324551-f6c309eed262?w=800&auto=format&fit=crop&q=80",
     completionPercentage: 80,
+    state: "Punjab",
+    city: "Chandigarh",
   },
 ];
 

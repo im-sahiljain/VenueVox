@@ -37,7 +37,7 @@ export default function OnboardingChecklist({ venuesCount, slotsCount, hasProfil
         <div className="flex-1">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Complete your setup</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Get the most out of StageHub by completing these essential steps.
+            Get the most out of VenueVox by completing these essential steps.
           </p>
           
           <div className="mt-4 flex items-center gap-3">

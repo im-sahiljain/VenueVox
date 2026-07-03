@@ -25,7 +25,7 @@ export default function LandingPage() {
               <Calendar className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">
-              Stage<span className="text-rose-500">Hub</span>
+              Venue<span className="text-rose-500">Vox</span>
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -189,10 +189,10 @@ export default function LandingPage() {
             <div className="bg-rose-500 text-white p-1.5 rounded-lg">
               <Calendar className="w-4 h-4" />
             </div>
-            <span className="text-white font-bold text-lg">StageHub</span>
+            <span className="text-white font-bold text-lg">VenueVox</span>
           </div>
           <p className="text-sm">
-            &copy; {new Date().getFullYear()} StageHub, Inc. All rights
+            &copy; {new Date().getFullYear()} VenueVox, Inc. All rights
             reserved.
           </p>
         </div>

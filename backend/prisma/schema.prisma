@@ -52,9 +52,12 @@ model Organization {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   description String?
+  state       String?
+  city        String?
   venues      Venue[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  voiceAssistant VoiceAssistant?
 
   @@map("organizations")
 }
@@ -71,6 +74,9 @@ model Venue {
   equipment      String[]
   policies       String[]
   imageUrl       String?
+  photos         String[]       @default([])
+  state          String?
+  city           String?
   calendars      Calendar[]
   bookableSlots  BookableSlot[]
   bookings       Booking[]
@@ -123,6 +129,9 @@ model Performer {
   travelRadius         Int
   equipmentNeeded      String[]
   imageUrl             String?
+  photos               String[]       @default([])
+  state                String?
+  city                 String?
   completionPercentage Int            @default(0)
   bookableSlots        BookableSlot[]
   bookings             Booking[]
@@ -201,4 +210,39 @@ model VenueManager {
 
   @@unique([userId, venueId])
   @@map("venue_managers")
+}
+
+model VoiceAssistant {
+  id              String         @id @default(uuid())
+  organizationId  String         @unique
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vapiAssistantId String?
+  name            String
+  industry        String
+  status          String
+  errorMessage    String?
+  config          Json?
+  lastSyncedAt    DateTime?
+  createdAt       DateTime       @default(now())
+  calls           VoiceCallLog[]
+
+  @@map("voice_assistants")
+}
+
+model VoiceCallLog {
+  id          String         @id @default(uuid())
+  assistantId String
+  assistant   VoiceAssistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  vapiCallId  String
+  type        String
+  startedAt   DateTime
+  endedAt     DateTime
+  duration    Int
+  cost        Float
+  status      String
+  transcript  String?
+  summary     String?
+  createdAt   DateTime       @default(now())
+
+  @@map("voice_call_logs")
 }

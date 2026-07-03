@@ -3,14 +3,14 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: stagehub-postgres
+    container_name: venuevox-postgres
     restart: always
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
-      POSTGRES_DB: stagehub_db
+      POSTGRES_DB: venuevox_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -18,13 +18,13 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: stagehub-backend
+    container_name: venuevox-backend
     restart: always
     ports:
       - "3001:3001"
     environment:
       - PORT=3001
-      - DATABASE_URL=postgresql://postgres:password123@db:5432/stagehub_db?schema=public
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/venuevox_db?schema=public
       - JWT_SECRET=mock-secret-key-12345
       - VAPI_API_KEY=${VAPI_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -36,7 +36,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: stagehub-frontend
+    container_name: venuevox-frontend
     restart: always
     ports:
       - "3000:3000"
