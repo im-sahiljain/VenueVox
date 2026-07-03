@@ -220,16 +220,16 @@ export const api = {
     getIndustries: async (): Promise<ApiRes<any[]>> => {
       return request<ApiRes<any[]>>('/voice/industries');
     },
+  },
 
-    // Delete media from Cloudinary via backend
-    deleteMedia: async (url: string): Promise<ApiRes<any>> => {
-      return request<ApiRes<any>>('/media/delete', {
-        method: 'POST',
-        body: JSON.stringify({ url }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-    },
-  }
+  // Delete media from Cloudinary via backend
+  deleteMedia: async (url: string): Promise<ApiRes<any>> => {
+    return request<ApiRes<any>>('/media/delete', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  },
 };
 
 export const uploadImageToCloudinary = async (file: File, folderPath: string): Promise<string> => {

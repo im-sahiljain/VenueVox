@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "A premium, availability-first entertainment booking marketplace connecting venues and performers.",
 };
 
+import { StoreProvider } from "@/app/providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,7 +44,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <StoreProvider>{children}</StoreProvider>
+      </body>
     </html>
   );
 }
+
