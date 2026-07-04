@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getVenues, createVenue, updateVenue, deleteVenue } from '../controllers/venues.controller';
+import { requireAuth, requireRole } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -41,8 +42,8 @@ const router = Router();
  *       201:
  *         description: Venue created
  */
-router.get('/', getVenues);
-router.post('/', createVenue);
+router.get('/', requireAuth, getVenues);
+router.post('/', requireAuth, requireRole(['ORGANIZATION']), createVenue);
 
 /**
  * @swagger
@@ -78,7 +79,7 @@ router.post('/', createVenue);
  *       200:
  *         description: Venue deleted
  */
-router.put('/:id', updateVenue);
-router.delete('/:id', deleteVenue);
+router.put('/:id', requireAuth, requireRole(['ORGANIZATION']), updateVenue);
+router.delete('/:id', requireAuth, requireRole(['ORGANIZATION']), deleteVenue);
 
 export default router;

@@ -15,6 +15,7 @@ import {
 import { BookingTimeline } from '@/components/BookingTimeline';
 import { api } from '@/lib/api';
 import { toLocalISOString, to12h } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function PerformerBookings() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function PerformerBookings() {
 
       const res = await api.createReview(data);
       if (res.success) {
-        alert('Review submitted successfully!');
+        toast.success('Review submitted successfully!');
         setShowAddReviewModal(null);
         setReviewRating(5);
         setReviewComment('');
@@ -63,7 +64,7 @@ export default function PerformerBookings() {
         );
       }
     } catch (err: any) {
-      alert('Failed to submit review: ' + err.message);
+      toast.error('Failed to submit review: ' + err.message);
     }
   };
 

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import jwt from 'jsonwebtoken';
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -58,8 +59,8 @@ export const login = async (req: Request, res: Response) => {
             equipmentNeeded: [],
             imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
             completionPercentage: 10,
-            state: state || null,
-            city: city || null
+            state: state || 'Punjab',
+            city: city || 'Chandigarh'
           }
         });
       } else if (role === 'organization') {
@@ -68,31 +69,16 @@ export const login = async (req: Request, res: Response) => {
             id: user.id, // match user id
             userId: user.id,
             name: name,
-            state: state || null,
-            city: city || null
+            state: state || 'Punjab',
+            city: city || 'Chandigarh'
           }
         });
       }
       } else {
-        // If user exists, update their profile with the selected state and city
+        // For existing users, load the performer profile if they are a performer (do not overwrite state/city)
         if (role === 'performer') {
-          await prisma.performer.updateMany({
-            where: { userId: user.id },
-            data: {
-              state: state || null,
-              city: city || null
-            }
-          });
           performer = await prisma.performer.findFirst({
             where: { userId: user.id }
-          });
-        } else if (role === 'organization') {
-          await prisma.organization.updateMany({
-            where: { userId: user.id },
-            data: {
-              state: state || null,
-              city: city || null
-            }
           });
         }
       }
@@ -104,12 +90,27 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const token = `mock-jwt-token-for-${user.id}`;
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_SECRET || 'venuevox-super-secret-key',
+      { expiresIn: '30d' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
     
     return res.status(200).json({
       success: true,
       data: {
-        token,
+        token, // optional / legacy return for client-side queries
         user: {
           id: user.id,
           name: user.name,

@@ -18,6 +18,7 @@ import {
 import { ImageSlideshow } from '@/components/ImageSlideshow';
 import { to12h } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function PerformerDiscover() {
   const dispatch = useAppDispatch();
@@ -68,11 +69,13 @@ export default function PerformerDiscover() {
       }
     }
 
-    alert(
-      succeeded === selectedSlotIds.length
-        ? `${succeeded} slot request(s) sent successfully!`
-        : `${succeeded}/${selectedSlotIds.length} requests sent. Some may have failed.`
-    );
+    if (succeeded === selectedSlotIds.length) {
+      toast.success(`${succeeded} slot request(s) sent successfully!`);
+    } else if (succeeded > 0) {
+      toast.warning(`${succeeded}/${selectedSlotIds.length} requests sent. Some may have failed.`);
+    } else {
+      toast.error('Failed to send slot requests.');
+    }
 
     setSelectedVenueSlots(null);
     setSelectedSlotIds([]);

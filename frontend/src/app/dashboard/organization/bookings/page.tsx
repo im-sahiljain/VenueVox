@@ -28,6 +28,7 @@ import { BookingTimeline } from '@/components/BookingTimeline';
 import { ImageSlideshow } from '@/components/ImageSlideshow';
 import { api } from '@/lib/api';
 import { toLocalISOString, to12h } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function OrganizationBookings() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function OrganizationBookings() {
 
       const res = await api.createReview(data);
       if (res.success) {
-        alert('Review submitted successfully!');
+        toast.success('Review submitted successfully!');
         setShowAddReviewModal(null);
         setReviewRating(5);
         setReviewComment('');
@@ -80,7 +81,7 @@ export default function OrganizationBookings() {
         dispatch(loadAllDataThunk({ loggedUser: user, queryOrgId }));
       }
     } catch (err: any) {
-      alert('Failed to submit review: ' + err.message);
+      toast.error('Failed to submit review: ' + err.message);
     }
   };
 

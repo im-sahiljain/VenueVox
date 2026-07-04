@@ -1,14 +1,15 @@
-const API_BASE = 'http://localhost:3001/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(options.headers as Record<string, string> || {}),
   };
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    credentials: 'include', // Enforce cookie transmission
   });
 
   const json = await response.json();
@@ -233,28 +234,25 @@ export const api = {
 };
 
 export const uploadImageToCloudinary = async (file: File, folderPath: string): Promise<string> => {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dj9wuxc1s";
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "venuevox_unsigned";
-  
   if (file.size > 1024 * 1024) {
     throw new Error("File size exceeds the 1MB limit. Please compress or select another photo.");
   }
   
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
   formData.append("folder", folderPath);
   
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+  const res = await fetch(`${API_BASE}/media/upload`, {
     method: "POST",
-    body: formData
+    body: formData,
+    credentials: 'include',
   });
   
   if (!res.ok) {
     const errData = await res.json();
-    throw new Error(errData.error?.message || "Failed to upload image to Cloudinary");
+    throw new Error(errData.message || "Failed to upload image to Cloudinary via backend");
   }
   
   const data = await res.json();
-  return data.secure_url;
+  return data.data;
 };

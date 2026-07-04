@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { StoreProvider } from "@/app/providers";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -46,6 +47,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <StoreProvider>{children}</StoreProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

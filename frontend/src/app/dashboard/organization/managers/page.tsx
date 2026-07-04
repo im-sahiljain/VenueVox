@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function OrganizationManagers() {
   const dispatch = useAppDispatch();
@@ -29,14 +30,14 @@ export default function OrganizationManagers() {
     if (!user) return;
 
     if (!newManagerData.venueId) {
-      alert('Please select a venue to assign the manager to.');
+      toast.error('Please select a venue to assign the manager to.');
       return;
     }
 
     try {
       const res = await api.createManager(user.id, newManagerData);
       if (res.success) {
-        alert('Venue Manager created successfully!');
+        toast.success('Venue Manager created successfully!');
         setShowAddManagerModal(false);
         setNewManagerData({ name: '', email: '', venueId: '' });
         // Reload all data to fetch updated managers list
@@ -44,7 +45,7 @@ export default function OrganizationManagers() {
         dispatch(loadAllDataThunk({ loggedUser: user, queryOrgId }));
       }
     } catch (err: any) {
-      alert('Failed to add manager: ' + err.message);
+      toast.error('Failed to add manager: ' + err.message);
     }
   };
 

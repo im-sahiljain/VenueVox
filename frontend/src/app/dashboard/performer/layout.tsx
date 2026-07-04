@@ -25,6 +25,8 @@ import {
 import Sidebar, { SidebarItem } from '@/components/Sidebar';
 import GlobalSearch from '@/components/GlobalSearch';
 
+import { toast } from 'sonner';
+
 export default function PerformerDashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -99,15 +101,17 @@ export default function PerformerDashboardLayout({ children }: { children: React
     return () => clearInterval(interval);
   }, [user, performer, activeVenueId, venuesList, dispatch]);
 
-  // Auto-clear success/error messages after 5 seconds
+  // Trigger Sonner Toasts for success/error messages
   useEffect(() => {
-    if (errorMsg || successMsg) {
-      const timeout = setTimeout(() => {
-        dispatch(clearMessages());
-      }, 5000);
-      return () => clearTimeout(timeout);
+    if (successMsg) {
+      toast.success(successMsg);
+      dispatch(clearMessages());
     }
-  }, [errorMsg, successMsg, dispatch]);
+    if (errorMsg) {
+      toast.error(errorMsg);
+      dispatch(clearMessages());
+    }
+  }, [successMsg, errorMsg, dispatch]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -210,20 +214,6 @@ export default function PerformerDashboardLayout({ children }: { children: React
 
         {/* Main Content Area */}
         <main className="flex-1 bg-slate-50 overflow-y-auto p-4 md:p-8 dark:bg-slate-900">
-          {/* Banner Messages */}
-          {errorMsg && (
-            <div className="mb-6 bg-rose-50 border border-rose-250 text-rose-800 p-4 rounded-xl flex items-start gap-3 text-sm dark:bg-rose-955/20 dark:border-rose-900/50 dark:text-rose-455">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span className="font-semibold">{errorMsg}</span>
-            </div>
-          )}
-          {successMsg && (
-            <div className="mb-6 bg-emerald-50 border border-emerald-250 text-emerald-800 p-4 rounded-xl flex items-start gap-3 text-sm dark:bg-emerald-955/20 dark:border-emerald-900/50 dark:text-emerald-455">
-              <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span className="font-semibold">{successMsg}</span>
-            </div>
-          )}
-
           {children}
         </main>
       </div>

@@ -10,6 +10,7 @@ import {
 } from '@/lib/store/performerSlice';
 import { Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function PerformerPortfolio() {
   const dispatch = useAppDispatch();
@@ -96,7 +97,7 @@ export default function PerformerPortfolio() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file.size > 1024 * 1024) {
-        alert(`File ${file.name} is too large. Max size is 1MB.`);
+        toast.error(`File ${file.name} is too large. Max size is 1MB.`);
         continue;
       }
       newFiles.push(file);
@@ -200,13 +201,13 @@ export default function PerformerPortfolio() {
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 1024 * 1024) {
-                              alert('Profile image size exceeds the 1MB limit.');
-                              return;
-                            }
-                            setPendingProfileFile(file);
-                          }
+                           if (file) {
+                             if (file.size > 1024 * 1024) {
+                               toast.error('Profile image size exceeds the 1MB limit.');
+                               return;
+                             }
+                             setPendingProfileFile(file);
+                           }
                         }}
                       />
                     </label>

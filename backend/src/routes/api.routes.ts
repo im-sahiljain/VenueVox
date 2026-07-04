@@ -5,8 +5,10 @@ import {
   getPerformers, getPerformerById, updatePerformer,
   getMessages, createMessage, getNotifications,
   getManagers, createManager,
-  getReviews, createReview, deleteMedia
+  getReviews, createReview, deleteMedia, uploadMedia
 } from '../controllers/api.controller';
+import { upload } from '../middleware/upload.middleware';
+import { requireAuth, requireRole } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -59,8 +61,8 @@ const router = Router();
  *       201:
  *         description: Slot created successfully
  */
-router.get('/slots', getSlots);
-router.post('/slots', createSlot);
+router.get('/slots', requireAuth, getSlots);
+router.post('/slots', requireAuth, requireRole(['ORGANIZATION']), createSlot);
 
 /**
  * @swagger
@@ -72,7 +74,7 @@ router.post('/slots', createSlot);
  *       200:
  *         description: Available slots retrieved successfully
  */
-router.get('/slots/discover', getDiscoverSlots);
+router.get('/slots/discover', requireAuth, getDiscoverSlots);
 
 /**
  * @swagger
@@ -108,8 +110,8 @@ router.get('/slots/discover', getDiscoverSlots);
  *       200:
  *         description: Slot deleted successfully
  */
-router.put('/slots/:id', updateSlot);
-router.delete('/slots/:id', deleteSlot);
+router.put('/slots/:id', requireAuth, requireRole(['ORGANIZATION']), updateSlot);
+router.delete('/slots/:id', requireAuth, requireRole(['ORGANIZATION']), deleteSlot);
 
 /**
  * @swagger
@@ -139,7 +141,7 @@ router.delete('/slots/:id', deleteSlot);
  *       200:
  *         description: Bookings retrieved successfully
  */
-router.get('/bookings', getBookings);
+router.get('/bookings', requireAuth, getBookings);
 
 /**
  * @swagger
@@ -180,9 +182,9 @@ router.get('/bookings', getBookings);
  *       201:
  *         description: Booking request created successfully
  */
-router.post('/bookings/request', requestBooking);
-router.post('/bookings/:bookingId/approve', approveBooking);
-router.post('/bookings/:bookingId/reject', rejectBooking);
+router.post('/bookings/request', requireAuth, requireRole(['PERFORMER']), requestBooking);
+router.post('/bookings/:bookingId/approve', requireAuth, requireRole(['ORGANIZATION']), approveBooking);
+router.post('/bookings/:bookingId/reject', requireAuth, requireRole(['ORGANIZATION']), rejectBooking);
 
 /**
  * @swagger
@@ -194,7 +196,7 @@ router.post('/bookings/:bookingId/reject', rejectBooking);
  *       200:
  *         description: List of performers retrieved successfully
  */
-router.get('/performers', getPerformers);
+router.get('/performers', requireAuth, getPerformers);
 
 /**
  * @swagger
@@ -230,8 +232,8 @@ router.get('/performers', getPerformers);
  *       200:
  *         description: Performer profile updated successfully
  */
-router.get('/performers/:id', getPerformerById);
-router.put('/performers/:id', updatePerformer);
+router.get('/performers/:id', requireAuth, getPerformerById);
+router.put('/performers/:id', requireAuth, requireRole(['PERFORMER']), updatePerformer);
 
 /**
  * @swagger
@@ -248,8 +250,8 @@ router.put('/performers/:id', updatePerformer);
  *       200:
  *         description: Messages retrieved successfully
  */
-router.get('/messages', getMessages);
-router.post('/messages', createMessage);
+router.get('/messages', requireAuth, getMessages);
+router.post('/messages', requireAuth, createMessage);
 
 /**
  * @swagger
@@ -266,7 +268,7 @@ router.post('/messages', createMessage);
  *       200:
  *         description: Notifications retrieved successfully
  */
-router.get('/notifications', getNotifications);
+router.get('/notifications', requireAuth, getNotifications);
 
 /**
  * @swagger
@@ -313,8 +315,8 @@ router.get('/notifications', getNotifications);
  *       201:
  *         description: Manager created successfully
  */
-router.get('/organizations/:orgId/managers', getManagers);
-router.post('/organizations/:orgId/managers', createManager);
+router.get('/organizations/:orgId/managers', requireAuth, getManagers);
+router.post('/organizations/:orgId/managers', requireAuth, requireRole(['ORGANIZATION']), createManager);
 
 /**
  * @swagger
@@ -366,8 +368,9 @@ router.post('/organizations/:orgId/managers', createManager);
  *       201:
  *         description: Review created successfully
  */
-router.get('/reviews', getReviews);
-router.post('/reviews', createReview);
-router.post('/media/delete', deleteMedia);
+router.get('/reviews', requireAuth, getReviews);
+router.post('/reviews', requireAuth, createReview);
+router.post('/media/delete', requireAuth, deleteMedia);
+router.post('/media/upload', requireAuth, upload.single('file'), uploadMedia);
 
 export default router;

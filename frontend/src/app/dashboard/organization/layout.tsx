@@ -27,6 +27,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function OrganizationDashboardLayout({
   children,
@@ -94,6 +95,18 @@ export default function OrganizationDashboardLayout({
       setInitialLoaded(true);
     });
   }, [dispatch, router]);
+
+  // Trigger Sonner Toasts for success/error messages
+  useEffect(() => {
+    if (successMsg) {
+      toast.success(successMsg);
+      dispatch(clearMessages());
+    }
+    if (errorMsg) {
+      toast.error(errorMsg);
+      dispatch(clearMessages());
+    }
+  }, [successMsg, errorMsg, dispatch]);
 
   // Clean success/error alerts when navigating tabs
   useEffect(() => {
@@ -226,20 +239,6 @@ export default function OrganizationDashboardLayout({
 
         {/* Scrollable Child Container */}
         <main className="flex-1 bg-slate-50 overflow-y-auto p-4 md:p-8 dark:bg-slate-900">
-          {/* Banner Messages */}
-          {errorMsg && (
-            <div className="mb-6 bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-start gap-3 text-sm dark:bg-rose-950/20 dark:border-rose-900/50 dark:text-rose-400">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span className="font-semibold">{errorMsg}</span>
-            </div>
-          )}
-          {successMsg && (
-            <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-start gap-3 text-sm dark:bg-emerald-950/20 dark:border-emerald-900/50 dark:text-emerald-400">
-              <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span className="font-semibold">{successMsg}</span>
-            </div>
-          )}
-
           {children}
         </main>
       </div>

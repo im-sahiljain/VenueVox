@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { api, uploadImageToCloudinary } from '@/lib/api';
+import { toast } from 'sonner';
 
 export interface PerformerState {
   user: any | null;
@@ -390,6 +391,30 @@ const performerSlice = createSlice({
 
       // Refresh Notifications and Messages
       .addCase(refreshPerformerNotificationsAndMessagesThunk.fulfilled, (state, action) => {
+        // Find new unread notifications
+        const oldIds = new Set(state.notificationsList.map((n: any) => n.id));
+        const newUnread = action.payload.notificationsList.filter(
+          (n: any) => !n.isRead && !oldIds.has(n.id)
+        );
+        newUnread.forEach((n: any) => {
+          toast(n.title || 'Notification', {
+            description: n.message,
+            icon: '🔔',
+          });
+        });
+
+        // Find new chat messages
+        const oldMsgIds = new Set(state.chatMessages.map((m: any) => m.id));
+        const newMsgs = action.payload.chatMessages.filter(
+          (m: any) => !oldMsgIds.has(m.id) && m.senderId !== state.user?.id
+        );
+        newMsgs.forEach((m: any) => {
+          toast('New Message', {
+            description: m.content,
+            icon: '💬',
+          });
+        });
+
         state.notificationsList = action.payload.notificationsList;
         if (action.payload.chatMessages.length > 0) {
           state.chatMessages = action.payload.chatMessages;

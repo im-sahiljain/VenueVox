@@ -578,12 +578,77 @@ export const deleteMedia = async (req: Request, res: Response) => {
       console.log(`Successfully deleted asset ${publicId} from Cloudinary`);
       return res.status(200).json({ success: true, message: 'Successfully deleted from Cloudinary' });
     } else {
-      console.error('Cloudinary destroy response:', response.data);
+      console.log('Cloudinary destroy response:', response.data);
       return res.status(200).json({ success: true, message: `Cloudinary destroy returned: ${response.data.result || 'unknown error'} (tolerated)` });
     }
   } catch (error: any) {
     console.error('Error destroying Cloudinary asset:', error.message);
     return res.status(200).json({ success: true, message: 'Tolerated backend error deleting from Cloudinary', error: error.message });
+  }
+};
+
+export const uploadMedia = async (req: Request, res: Response) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const folder = (req.body.folder as string) || 'VenueVox';
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return res.status(550).json({
+        success: false,
+        message: 'Cloudinary credentials missing in backend environment',
+      });
+    }
+
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    
+    // Sort and sign the parameters: folder and timestamp
+    const signatureStr = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const signature = crypto.createHash('sha1').update(signatureStr).digest('hex');
+
+    const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+
+    const formData = new URLSearchParams();
+    formData.append('file', fileBase64);
+    formData.append('folder', folder);
+    formData.append('timestamp', String(timestamp));
+    formData.append('api_key', apiKey);
+    formData.append('signature', signature);
+
+    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+    const response = await axios.post(cloudinaryUrl, formData.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+
+    if (response.data && response.data.secure_url) {
+      return res.status(200).json({
+        success: true,
+        data: response.data.secure_url,
+        message: 'Image uploaded successfully',
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to upload to Cloudinary',
+        errors: [response.data],
+      });
+    }
+  } catch (error: any) {
+    console.error('Error uploading to Cloudinary:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error uploading to Cloudinary',
+      errors: [error.message],
+    });
   }
 };
 

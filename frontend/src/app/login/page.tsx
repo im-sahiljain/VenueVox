@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Calendar, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 function LoginContent() {
   const router = useRouter();
@@ -19,8 +20,6 @@ function LoginContent() {
   const [role, setRole] = useState<"organization" | "performer">(initialRole);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedState, setSelectedState] = useState("Punjab");
-  const [selectedCity, setSelectedCity] = useState("Chandigarh");
 
   useEffect(() => {
     // If already logged in, redirect
@@ -43,6 +42,7 @@ function LoginContent() {
     e.preventDefault();
     if (!email) {
       setError("Please enter your email");
+      toast.error("Please enter your email");
       return;
     }
 
@@ -50,9 +50,9 @@ function LoginContent() {
     setError("");
 
     try {
-      const response = await api.login(email, role, selectedState, selectedCity);
+      const response = await api.login(email, role);
       if (response.success && response.data) {
-        localStorage.setItem("token", response.data.token);
+        toast.success("Successfully logged in!");
         localStorage.setItem("user", JSON.stringify(response.data.user));
         if (response.data.performer) {
           localStorage.setItem(
@@ -79,18 +79,20 @@ function LoginContent() {
         }
       } else {
         setError(response.message || "Login failed");
+        toast.error(response.message || "Login failed");
       }
     } catch (err: any) {
-      setError(
+      const msg =
         err.message ||
-          "Unable to connect to the server. Make sure the backend is running.",
-      );
+        "Unable to connect to the server. Make sure the backend is running.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadDemo = (
+  const loadDemo = async (
     demoType:
       | "org1"
       | "org2"
@@ -102,42 +104,94 @@ function LoginContent() {
       | "perf2"
       | "perf3",
   ) => {
+    let demoEmail = "";
+    let demoPassword = "";
+    let demoRole: "organization" | "performer" = "organization";
+
     if (demoType === "org1") {
-      setEmail("org1@stagehub.com");
-      setPassword("org1@stagehub");
-      setRole("organization");
+      demoEmail = "org1@stagehub.com";
+      demoPassword = "org1@stagehub";
+      demoRole = "organization";
     } else if (demoType === "org2") {
-      setEmail("org2@stagehub.com");
-      setPassword("org2@stagehub");
-      setRole("organization");
+      demoEmail = "org2@stagehub.com";
+      demoPassword = "org2@stagehub";
+      demoRole = "organization";
     } else if (demoType === "mgr1") {
-      setEmail("john@stagehub.com");
-      setPassword("mgr1@stagehub");
-      setRole("organization");
+      demoEmail = "john@stagehub.com";
+      demoPassword = "mgr1@stagehub";
+      demoRole = "organization";
     } else if (demoType === "mgr2") {
-      setEmail("alice@stagehub.com");
-      setPassword("mgr2@stagehub");
-      setRole("organization");
+      demoEmail = "alice@stagehub.com";
+      demoPassword = "mgr2@stagehub";
+      demoRole = "organization";
     } else if (demoType === "mgr3") {
-      setEmail("david@stagehub.com");
-      setPassword("mgr3@stagehub");
-      setRole("organization");
+      demoEmail = "david@stagehub.com";
+      demoPassword = "mgr3@stagehub";
+      demoRole = "organization";
     } else if (demoType === "mgr4") {
-      setEmail("emma@stagehub.com");
-      setPassword("mgr4@stagehub");
-      setRole("organization");
+      demoEmail = "emma@stagehub.com";
+      demoPassword = "mgr4@stagehub";
+      demoRole = "organization";
     } else if (demoType === "perf1") {
-      setEmail("perf1@stagehub.com");
-      setPassword("perf1@stagehub");
-      setRole("performer");
+      demoEmail = "perf1@stagehub.com";
+      demoPassword = "perf1@stagehub";
+      demoRole = "performer";
     } else if (demoType === "perf2") {
-      setEmail("perf2@stagehub.com");
-      setPassword("perf2@stagehub");
-      setRole("performer");
+      demoEmail = "perf2@stagehub.com";
+      demoPassword = "perf2@stagehub";
+      demoRole = "performer";
     } else {
-      setEmail("perf3@stagehub.com");
-      setPassword("perf3@stagehub");
-      setRole("performer");
+      demoEmail = "perf3@stagehub.com";
+      demoPassword = "perf3@stagehub";
+      demoRole = "performer";
+    }
+
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setRole(demoRole);
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await api.login(demoEmail, demoRole);
+      if (response.success && response.data) {
+        toast.success(`Successfully logged in as ${response.data.user.name}!`);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        if (response.data.performer) {
+          localStorage.setItem(
+            "performer",
+            JSON.stringify(response.data.performer),
+          );
+        } else {
+          localStorage.removeItem("performer");
+        }
+        if (response.data.organization) {
+          localStorage.setItem(
+            "organization",
+            JSON.stringify(response.data.organization),
+          );
+        } else {
+          localStorage.removeItem("organization");
+        }
+
+        // Redirect based on role
+        if (demoRole === "organization") {
+          router.push("/dashboard/organization");
+        } else {
+          router.push("/dashboard/performer");
+        }
+      } else {
+        setError(response.message || "Login failed");
+        toast.error(response.message || "Login failed");
+      }
+    } catch (err: any) {
+      const msg =
+        err.message ||
+        "Unable to connect to the server. Make sure the backend is running.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -234,44 +288,6 @@ function LoginContent() {
                   placeholder="••••••••"
                   className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-sm bg-white"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    State
-                  </label>
-                  <select
-                    value={selectedState}
-                    onChange={(e) => {
-                      setSelectedState(e.target.value);
-                      // Set default city based on state selection
-                      if (e.target.value === "Punjab") setSelectedCity("Chandigarh");
-                      else if (e.target.value === "Karnataka") setSelectedCity("Bengaluru");
-                      else if (e.target.value === "Maharashtra") setSelectedCity("Mumbai");
-                    }}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-sm bg-white"
-                  >
-                    <option value="Punjab">Punjab</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    City
-                  </label>
-                  <select
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition text-sm bg-white"
-                  >
-                    {selectedState === "Punjab" && <option value="Chandigarh">Chandigarh</option>}
-                    {selectedState === "Karnataka" && <option value="Bengaluru">Bengaluru</option>}
-                    {selectedState === "Maharashtra" && <option value="Mumbai">Mumbai</option>}
-                  </select>
-                </div>
               </div>
             </div>
 

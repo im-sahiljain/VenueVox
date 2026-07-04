@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ImageSlideshow } from '@/components/ImageSlideshow';
+import { toast } from 'sonner';
 
 export default function VenuesManagement() {
   const dispatch = useAppDispatch();
@@ -149,7 +150,7 @@ export default function VenuesManagement() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file.size > 1024 * 1024) {
-        alert(`File ${file.name} is too large. Max size is 1MB.`);
+        toast.error(`File ${file.name} is too large. Max size is 1MB.`);
         continue;
       }
       newFiles.push(file);
@@ -600,7 +601,7 @@ export default function VenuesManagement() {
                               const file = e.target.files?.[0];
                               if (file) {
                                 if (file.size > 1024 * 1024) {
-                                  alert('Cover image size exceeds the 1MB limit.');
+                                  toast.error('Cover image size exceeds the 1MB limit.');
                                   return;
                                 }
                                 setPendingVenueProfileFile(file);
