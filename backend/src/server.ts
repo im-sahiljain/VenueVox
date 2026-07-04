@@ -18,7 +18,7 @@ const allowedOrigins = [
 ];
 
 if (process.env.FRONTEND_URL) {
-  const urls = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+  const urls = process.env.FRONTEND_URL.split(',').map(url => url.trim().replace(/\/$/, ''));
   allowedOrigins.push(...urls);
 }
 
