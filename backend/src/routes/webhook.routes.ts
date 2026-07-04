@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { getConfig } from '../config/env';
 import { industryTemplates } from '../templates/industries';
 import { provisionAssistant } from '../services/assistant.service';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
 // GET /api/v1/voice/industries
 // Returns the list of available industry templates
 // ─────────────────────────────────────────────────────────────────────
-router.get('/industries', (_req: Request, res: Response) => {
+router.get('/industries', requireAuth, (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: industryTemplates,
@@ -23,7 +24,7 @@ router.get('/industries', (_req: Request, res: Response) => {
 // POST /api/v1/voice/provision
 // Provision or update a Vapi assistant for an organization
 // ─────────────────────────────────────────────────────────────────────
-router.post('/provision', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/provision', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { orgId, industry } = req.body;
     if (!orgId || !industry) {
@@ -55,7 +56,7 @@ router.post('/provision', async (req: Request, res: Response, next: NextFunction
 // GET /api/v1/voice/assistant?orgId=xxx
 // Get the voice assistant record for an organization
 // ─────────────────────────────────────────────────────────────────────
-router.get('/assistant', async (req: Request, res: Response) => {
+router.get('/assistant', requireAuth, async (req: Request, res: Response) => {
   try {
     const orgId = req.query.orgId as string;
     if (!orgId) {
@@ -88,7 +89,7 @@ router.get('/assistant', async (req: Request, res: Response) => {
 // GET /api/v1/voice/calls?orgId=xxx
 // Get voice call logs for an organization's assistant
 // ─────────────────────────────────────────────────────────────────────
-router.get('/calls', async (req: Request, res: Response) => {
+router.get('/calls', requireAuth, async (req: Request, res: Response) => {
   try {
     const orgId = req.query.orgId as string;
     if (!orgId) {
