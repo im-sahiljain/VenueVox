@@ -68,6 +68,7 @@ export default function PerformerDiscover() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<any[]>([]);
+  const [connectingCallVenueId, setConnectingCallVenueId] = useState<string | null>(null);
 
   const vapiRef = useRef<Vapi | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
@@ -90,6 +91,7 @@ export default function PerformerDiscover() {
 
     vapi.on("call-start", () => {
       setIsCallActive(true);
+      setConnectingCallVenueId(null);
       setTranscript([]);
       toast.success("Connected to receptionist! Speak into your mic.");
     });
@@ -97,6 +99,7 @@ export default function PerformerDiscover() {
     vapi.on("call-end", () => {
       setIsCallActive(false);
       setIsSpeaking(false);
+      setConnectingCallVenueId(null);
       toast.info("Call ended.");
     });
 
@@ -126,6 +129,7 @@ export default function PerformerDiscover() {
       toast.error("Voice call error occurred.");
       setIsCallActive(false);
       setIsSpeaking(false);
+      setConnectingCallVenueId(null);
     });
 
     return () => {
@@ -150,6 +154,7 @@ export default function PerformerDiscover() {
     setActiveCallVenueName(venue.name);
     setTranscript([]);
     setIsCallActive(true);
+    setConnectingCallVenueId(venue.id);
     vapiRef.current?.start(venue.vapiAssistantId);
   }, []);
 
@@ -451,7 +456,7 @@ export default function PerformerDiscover() {
                     </Button>
                     <Button
                       onClick={() => startVoiceCall(venue)}
-                      disabled={!venue?.hasVoiceAssistant}
+                      disabled={!venue?.hasVoiceAssistant || connectingCallVenueId === venue.id}
                       className={`font-bold py-6 px-4.5 rounded-xl transition text-sm flex items-center gap-1.5 shadow-sm ${
                         venue?.hasVoiceAssistant
                           ? "bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
@@ -463,7 +468,15 @@ export default function PerformerDiscover() {
                           : "Agent not available"
                       }
                     >
-                      <Phone className="w-4 h-4" /> Call Venue
+                      {connectingCallVenueId === venue.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Calling...
+                        </>
+                      ) : (
+                        <>
+                          <Phone className="w-4 h-4" /> Call Venue
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
