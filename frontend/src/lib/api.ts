@@ -195,15 +195,19 @@ export const api = {
     });
   },
 
-  // ==========================================
-  // VOICE AI API
-  // ==========================================
   voice: {
-    // Provision or sync the Voice Assistant
     provisionAssistant: async (orgId: string, industry: string): Promise<ApiRes<any>> => {
       return request<ApiRes<any>>('/voice/provision', {
         method: "POST",
         body: JSON.stringify({ orgId, industry }),
+      });
+    },
+
+    // Deprovision/Delete assistant
+    deprovisionAssistant: async (orgId: string): Promise<ApiRes<any>> => {
+      return request<ApiRes<any>>('/voice/deprovision', {
+        method: "POST",
+        body: JSON.stringify({ orgId }),
       });
     },
 

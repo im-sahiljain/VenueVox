@@ -53,6 +53,57 @@ router.post('/provision', requireAuth, async (req: Request, res: Response, next:
 });
 
 // ─────────────────────────────────────────────────────────────────────
+// POST /api/v1/voice/deprovision
+// Delete Vapi assistant and clear database record for an organization
+// ─────────────────────────────────────────────────────────────────────
+router.post('/deprovision', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.body;
+    if (!orgId) {
+      return res.status(400).json({
+        success: false,
+        message: 'orgId is required.',
+      });
+    }
+
+    const assistant = await prisma.voiceAssistant.findUnique({
+      where: { organizationId: orgId },
+    });
+
+    if (assistant) {
+      if (assistant.vapiAssistantId) {
+        const config = getConfig();
+        const vapiApiKey = config.vapiApiKey;
+        if (vapiApiKey) {
+          try {
+            const { deleteAssistant } = require('../services/vapi.service');
+            await deleteAssistant(assistant.vapiAssistantId, vapiApiKey);
+          } catch (vapiErr: any) {
+            console.error('⚠️ Failed to delete assistant from Vapi:', vapiErr.message);
+            // Proceed to clear local DB even if Vapi deletion fails
+          }
+        }
+      }
+
+      await prisma.voiceAssistant.delete({
+        where: { id: assistant.id },
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Assistant deleted successfully.',
+    });
+  } catch (error: any) {
+    console.error('❌ Deprovision Error:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to deprovision assistant',
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────
 // GET /api/v1/voice/assistant?orgId=xxx
 // Get the voice assistant record for an organization
 // ─────────────────────────────────────────────────────────────────────
@@ -145,9 +196,29 @@ router.post('/webhook', async (req: Request, res: Response, next: NextFunction) 
       return res.json({ success: true, message: 'Not a tool-call event.' });
     }
 
-    const toolCall = message.toolCalls?.[0];
-    if (!toolCall) {
+    const rawToolCall = message.toolCalls?.[0];
+    if (!rawToolCall) {
       return res.status(400).json({ error: 'No tool call found.' });
+    }
+
+    // Normalize toolCall properties for OpenAI / Vapi format compatibility
+    const toolCall = {
+      id: rawToolCall.id,
+      name: rawToolCall.name,
+      arguments: rawToolCall.arguments || {}
+    };
+
+    if (rawToolCall.function) {
+      toolCall.name = rawToolCall.function.name;
+      if (typeof rawToolCall.function.arguments === 'string') {
+        try {
+          toolCall.arguments = JSON.parse(rawToolCall.function.arguments);
+        } catch (e) {
+          toolCall.arguments = {};
+        }
+      } else if (rawToolCall.function.arguments) {
+        toolCall.arguments = rawToolCall.function.arguments;
+      }
     }
 
     // ── Route to the correct tool handler ──
@@ -237,12 +308,12 @@ ${dbContext}
 User Request: "${question}"
 
 You must answer the question based ONLY on the provided context. If the information is not in the context, say you don't know or don't have that information.
-When listing slots, always include the slot ID so the user can reference it for booking.
+NEVER speak or mention slot IDs (like s-xxx) to the caller. Instead, describe slots using their day of the week, date, and time (e.g. 'Monday, July 6th from 7 PM to 10 PM') so it sounds natural.
 Your response MUST be a single, valid JSON object containing exactly one key: "answer", which holds the natural language text you want the voice agent to speak to the user. Do not wrap the JSON in markdown code blocks.
 
 JSON Schema format to follow:
 {
-  "answer": "Yes, we have a slot available tomorrow evening from 5 PM to 7 PM with a ₹200 budget at Sector 17 Brew & Cafe. The slot ID is s-1029. Would you like to book it?"
+  "answer": "Yes, we have a slot available tomorrow evening from 5 PM to 7 PM with a ₹200 budget at Sector 17 Brew & Cafe. Would you like to book it?"
 }
 `;
 
@@ -287,7 +358,15 @@ JSON Schema format to follow:
     results: [
       {
         toolCallId: toolCall.id,
-        result: JSON.stringify(queryResult),
+        result: JSON.stringify({
+          answer: queryResult.answer,
+          slots: availableSlots.map((s) => ({
+            id: s.id,
+            date: s.date,
+            startTime: s.startTime,
+            endTime: s.endTime,
+          })),
+        }),
       },
     ],
   });
