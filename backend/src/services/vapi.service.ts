@@ -51,3 +51,13 @@ export const getCalls = async (params: any, apiKey: string) => {
     throw new Error('Failed to fetch calls from Vapi');
   }
 };
+
+export const deleteAssistant = async (id: string, apiKey: string) => {
+  try {
+    const response = await getClient(apiKey).delete(`/assistant/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Vapi Delete Assistant Error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Failed to delete assistant from Vapi');
+  }
+};

@@ -17,6 +17,7 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
   const [calls, setCalls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProvisioning, setIsProvisioning] = useState(false);
+  const [isDeprovisioning, setIsDeprovisioning] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
   const [isCallActive, setIsCallActive] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -137,6 +138,26 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
       toast.error('Failed to provision assistant');
     } finally {
       setIsProvisioning(false);
+    }
+  };
+
+  const handleDeleteAssistant = async () => {
+    if (!confirm('Are you sure you want to delete this AI Assistant? This will delete the assistant configuration and clear all call logs.')) {
+      return;
+    }
+    setIsDeprovisioning(true);
+    try {
+      const res = await api.voice.deprovisionAssistant(orgId);
+      if (res.success) {
+        toast.success('AI Receptionist deleted successfully.');
+        setAssistant(null);
+      } else {
+        toast.error(res.message || 'Failed to delete assistant.');
+      }
+    } catch (e: any) {
+      toast.error('Failed to delete assistant.');
+    } finally {
+      setIsDeprovisioning(false);
     }
   };
 
@@ -266,6 +287,18 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
                   className="w-full text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
                 >
                   {isProvisioning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Syncing...</> : 'Sync Latest Calendar Data'}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={handleDeleteAssistant}
+                  disabled={isDeprovisioning || isProvisioning}
+                  className="w-full text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/20 font-bold mt-2 cursor-pointer h-11"
+                >
+                  {isDeprovisioning ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Deleting Assistant...</>
+                  ) : (
+                    'Delete Assistant'
+                  )}
                 </Button>
               </div>
             )}
