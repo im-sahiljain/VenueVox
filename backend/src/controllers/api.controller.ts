@@ -75,19 +75,31 @@ export const getDiscoverSlots = async (req: Request, res: Response) => {
       include: {
         venue: {
           include: {
-            organization: true
+            organization: {
+              include: {
+                voiceAssistant: true
+              }
+            }
           }
         }
       }
     });
 
     const formattedSlots = slots.map((s: any) => {
-      const hasVoiceAssistant = false;
+      const assistant = s.venue?.organization?.voiceAssistant;
+      const hasVoiceAssistant = !!(
+        assistant &&
+        assistant.status === 'active' &&
+        assistant.vapiAssistantId
+      );
+      const vapiAssistantId = hasVoiceAssistant ? assistant.vapiAssistantId : null;
+
       return {
         ...s,
         venue: s.venue ? {
           ...s.venue,
-          hasVoiceAssistant
+          hasVoiceAssistant,
+          vapiAssistantId
         } : null,
         organization: s.venue?.organization ? {
           id: s.venue.organization.id,

@@ -84,8 +84,9 @@ Be concise, polite, and act as a representative of ${orgName}. Do not mention th
     firstMessage: `Hello, thank you for calling ${orgName}. I'm the virtual assistant. Are you calling to inquire about gig slots, make a booking, or something else?`,
     endCallMessage: `Thank you for calling ${orgName}. Have a wonderful day!`,
     voice: {
-      provider: "playht",
-      voiceId: "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/female-cs/manifest.json"
+      provider: "vapi",
+      voiceId: "Neil",
+      version: 2
     },
     model: {
       provider: "openai",

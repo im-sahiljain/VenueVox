@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/store';
 import {
   setSearchFilters,
   requestBookingThunk,
   loadPerformerDataThunk,
 } from '@/lib/store/performerSlice';
-import { Search, MapPin, Calendar as CalendarIcon, Mic, Info, Check } from 'lucide-react';
+import { Search, MapPin, Calendar as CalendarIcon, Mic, Info, Check, Phone, Activity, Square, Volume2, Loader2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,6 +19,7 @@ import { ImageSlideshow } from '@/components/ImageSlideshow';
 import { to12h } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import Vapi from '@vapi-ai/web';
 
 export default function PerformerDiscover() {
   const dispatch = useAppDispatch();
@@ -29,6 +30,98 @@ export default function PerformerDiscover() {
   // Grouped venue dialog state
   const [selectedVenueSlots, setSelectedVenueSlots] = useState<any | null>(null); // { venue, slots[] }
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
+
+  // Voice calling states
+  const [activeCallVenueName, setActiveCallVenueName] = useState<string>('');
+  const [isCallActive, setIsCallActive] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState<any[]>([]);
+
+  const vapiRef = useRef<Vapi | null>(null);
+  const transcriptEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll transcript
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [transcript]);
+
+  // Initialize Vapi SDK
+  useEffect(() => {
+    const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+    if (!publicKey || publicKey === 'your_vapi_public_key') {
+      console.warn('⚠️ NEXT_PUBLIC_VAPI_PUBLIC_KEY not configured.');
+      return;
+    }
+
+    const vapi = new Vapi(publicKey);
+    vapiRef.current = vapi;
+
+    vapi.on('call-start', () => {
+      setIsCallActive(true);
+      setTranscript([]);
+      toast.success('Connected to receptionist! Speak into your mic.');
+    });
+
+    vapi.on('call-end', () => {
+      setIsCallActive(false);
+      setIsSpeaking(false);
+      toast.info('Call ended.');
+    });
+
+    vapi.on('speech-start', () => {
+      setIsSpeaking(true);
+    });
+
+    vapi.on('speech-end', () => {
+      setIsSpeaking(false);
+    });
+
+    vapi.on('message', (msg: any) => {
+      if (msg.type === 'transcript' && msg.transcriptType === 'final') {
+        setTranscript((prev) => [
+          ...prev,
+          {
+            role: msg.role as 'assistant' | 'user',
+            text: msg.transcript,
+            timestamp: new Date().toLocaleTimeString(),
+          },
+        ]);
+      }
+    });
+
+    vapi.on('error', (error: any) => {
+      console.error('Vapi Error:', error);
+      toast.error('Voice call error occurred.');
+      setIsCallActive(false);
+      setIsSpeaking(false);
+    });
+
+    return () => {
+      vapi.stop();
+    };
+  }, []);
+
+  const startVoiceCall = useCallback((venue: any) => {
+    if (!venue.vapiAssistantId) {
+      toast.error('Voice Assistant not active for this venue.');
+      return;
+    }
+
+    const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+    if (!publicKey || publicKey === 'your_vapi_public_key') {
+      toast.error('VAPI public key is not configured. Please set NEXT_PUBLIC_VAPI_PUBLIC_KEY in your environment.');
+      return;
+    }
+
+    setActiveCallVenueName(venue.name);
+    setTranscript([]);
+    setIsCallActive(true);
+    vapiRef.current?.start(venue.vapiAssistantId);
+  }, []);
+
+  const endVoiceCall = useCallback(() => {
+    vapiRef.current?.stop();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,15 +372,27 @@ export default function PerformerDiscover() {
                     </p>
                   </div>
 
-                  <div className="p-5 border-t border-slate-100 dark:border-slate-700">
+                  <div className="p-5 border-t border-slate-100 dark:border-slate-700 flex gap-3">
                     <Button
                       onClick={() => {
                         setSelectedVenueSlots({ venue, slots });
                         setSelectedSlotIds([]);
                       }}
-                      className="w-full bg-slate-900 text-white font-bold py-6 rounded-xl hover:bg-slate-800 transition text-xs cursor-pointer"
+                      className="flex-1 bg-slate-900 text-white font-bold py-6 rounded-xl hover:bg-slate-805 transition text-xs cursor-pointer"
                     >
                       View {slots.length} Slot{slots.length !== 1 ? 's' : ''} & Apply
+                    </Button>
+                    <Button
+                      onClick={() => startVoiceCall(venue)}
+                      disabled={!venue?.hasVoiceAssistant}
+                      className={`font-bold py-6 px-4.5 rounded-xl transition text-xs flex items-center gap-1.5 shadow-sm ${
+                        venue?.hasVoiceAssistant
+                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer'
+                          : 'bg-slate-100 dark:bg-slate-850 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                      }`}
+                      title={venue?.hasVoiceAssistant ? 'Talk to AI Receptionist' : 'Agent not available'}
+                    >
+                      <Phone className="w-4 h-4" /> Call Venue
                     </Button>
                   </div>
                 </div>
@@ -485,6 +590,85 @@ export default function PerformerDiscover() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Voice Call Dialog */}
+      <Dialog
+        open={isCallActive}
+        onOpenChange={(open) => {
+          if (!open) {
+            endVoiceCall();
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-md w-full max-h-[90vh] overflow-y-auto p-8 bg-slate-900 border border-slate-800 rounded-3xl text-white shadow-2xl relative"
+          showCloseButton={true}
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-5">
+            <Mic className="w-32 h-32 text-indigo-400" />
+          </div>
+
+          <DialogHeader className="mb-6 relative z-10">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
+              <Phone className="w-5 h-5 text-indigo-400 animate-pulse" />
+              Calling Receptionist
+            </DialogTitle>
+            <p className="text-xs text-slate-400 mt-1 font-semibold uppercase tracking-wider">
+              {activeCallVenueName}
+            </p>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center p-8 bg-slate-950/80 rounded-2xl border border-slate-800/60 mb-6 relative z-10">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-20"></div>
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all ${isSpeaking ? 'bg-emerald-600' : 'bg-indigo-650'}`}>
+                {isSpeaking ? <Volume2 className="w-10 h-10 text-white" /> : <Activity className="w-10 h-10 text-white" />}
+              </div>
+            </div>
+            <p className={`font-semibold mb-1 animate-pulse ${isSpeaking ? 'text-emerald-300' : 'text-indigo-300'}`}>
+              {isSpeaking ? 'Agent Speaking...' : 'Listening...'}
+            </p>
+            <p className="text-xs text-slate-500 text-center px-4 leading-normal mt-1">
+              Ask about slot availability or request a booking directly by voice!
+            </p>
+          </div>
+
+          {/* Transcript Section */}
+          {transcript.length > 0 && (
+            <div className="relative z-10 mb-6">
+              <h4 className="text-xs font-bold text-slate-400 flex items-center gap-1.5 mb-2.5">
+                <MessageCircle className="w-4 h-4" /> Live Transcript
+              </h4>
+              <div className="max-h-48 overflow-y-auto bg-slate-950/50 rounded-xl p-3.5 space-y-3.5 border border-slate-800 scrollbar-thin">
+                {transcript.map((entry, idx) => (
+                  <div key={idx} className={`flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed ${
+                      entry.role === 'user' 
+                        ? 'bg-indigo-600/30 text-indigo-200 border border-indigo-700/40 rounded-br-none' 
+                        : 'bg-slate-800 text-slate-350 border border-slate-700/60 rounded-bl-none'
+                    }`}>
+                      <div className="text-[9px] font-bold uppercase tracking-wider mb-1 opacity-50 flex items-center gap-1">
+                        {entry.role === 'user' ? '🎤 You' : '🤖 Receptionist'}
+                      </div>
+                      {entry.text}
+                    </div>
+                  </div>
+                ))}
+                <div ref={transcriptEndRef} />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-center relative z-10">
+            <Button
+              onClick={endVoiceCall}
+              className="px-8 py-5 rounded-full font-bold text-sm bg-rose-600 hover:bg-rose-700 transition-all shadow-[0_0_15px_rgba(225,29,72,0.3)] hover:scale-105"
+            >
+              <Square className="w-4 h-4 mr-2 fill-current" /> End Conversation
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
