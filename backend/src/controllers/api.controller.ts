@@ -26,12 +26,37 @@ export const getSlots = async (req: Request, res: Response) => {
 export const getDiscoverSlots = async (req: Request, res: Response) => {
   try {
     const { location, date, budget, venueType, equipment, state, city } = req.query;
+    const now = new Date();
+    const localDateStr = now.toLocaleDateString('en-CA');
+    const localTimeStr = now.toTimeString().slice(0, 5);
+
     const where: any = {
       status: 'AVAILABLE'
     };
 
     if (date) {
       where.date = date as string;
+      if (date === localDateStr) {
+        where.startTime = {
+          gt: localTimeStr
+        };
+      }
+    } else {
+      where.OR = [
+        {
+          date: {
+            gt: localDateStr
+          }
+        },
+        {
+          date: {
+            equals: localDateStr
+          },
+          startTime: {
+            gt: localTimeStr
+          }
+        }
+      ];
     }
     if (budget) {
       where.budget = {
@@ -151,16 +176,30 @@ export const deleteSlot = async (req: Request, res: Response) => {
 // Bookings
 export const requestBooking = async (req: Request, res: Response) => {
   try {
-    const { slotId, performerId, date, startTime, endTime, budget, venueId } = req.body;
+    const { slotId, performerId } = req.body;
+
+    const slot = await prisma.bookableSlot.findUnique({
+      where: { id: slotId },
+      include: { venue: true }
+    });
+
+    if (!slot) {
+      return res.status(404).json({ success: false, message: 'Slot not found' });
+    }
+
+    if (slot.status !== 'AVAILABLE') {
+      return res.status(400).json({ success: false, message: 'Slot is not available' });
+    }
+
     const booking = await prisma.booking.create({
       data: {
         slotId,
         performerId,
-        date,
-        startTime,
-        endTime,
-        budget,
-        venueId,
+        date: slot.date,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        budget: slot.budget,
+        venueId: slot.venueId,
         status: 'PENDING'
       },
       include: {
@@ -190,7 +229,7 @@ export const requestBooking = async (req: Request, res: Response) => {
     
     // Find venue managers
     const managers = await prisma.venueManager.findMany({
-      where: { venueId }
+      where: { venueId: booking.venueId }
     });
     for (const m of managers) {
       if (!notificationsToCreate.includes(m.userId)) {
@@ -205,7 +244,7 @@ export const requestBooking = async (req: Request, res: Response) => {
         data: {
           userId: targetUserId,
           title: 'New Booking Request',
-          message: `Booking request from ${performerName} at ${booking.venue?.name} on ${date} (${startTime}-${endTime}).`,
+          message: `Booking request from ${performerName} at ${booking.venue?.name} on ${booking.date} (${booking.startTime}-${booking.endTime}).`,
           read: false,
         }
       });
@@ -606,7 +645,7 @@ export const uploadMedia = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    const folder = (req.body.folder as string) || 'VenueVox';
+    const folder = (req.body.folder as string) || 'VenueVoxAI';
 
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;

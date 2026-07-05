@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VenueVox – Entertainment Booking Marketplace",
+  title: "VenueVoxAI – Entertainment Booking Marketplace",
   description: "A premium, availability-first entertainment booking marketplace connecting venues and performers.",
 };
 

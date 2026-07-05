@@ -1,7 +1,7 @@
 {
-  "name": "stagehub-backend",
+  "name": "venuevoxai-backend",
   "version": "1.0.0",
-  "description": "Mock backend for StageHub Entertainment Marketplace MVP",
+  "description": "Mock backend for VenueVoxAI Entertainment Marketplace MVP",
   "main": "src/server.ts",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",

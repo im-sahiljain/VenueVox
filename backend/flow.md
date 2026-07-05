@@ -16,7 +16,7 @@ sequenceDiagram
     participant DB as Prisma Database
 
     Caller->>Vapi: "Do you have any available slots this weekend?"
-    Vapi->>Webhook: Tool Call: queryVenueVoxDatabase(question="What slots are available this weekend?")
+    Vapi->>Webhook: Tool Call: queryVenueVoxAIDatabase(question="What slots are available this weekend?")
     Webhook->>DB: Fetch all AVAILABLE slots
     DB-->>Webhook: Return slots list (raw data)
     Webhook->>Gemini: Send prompt with raw slots + caller's question
@@ -35,10 +35,10 @@ sequenceDiagram
 
 ---
 
-## 2. How Searching Works (`queryVenueVoxDatabase`)
+## 2. How Searching Works (`queryVenueVoxAIDatabase`)
 
 1. **Trigger:** The caller asks a question about dates, times, prices, or venue policies.
-2. **Tool Invocation:** The Vapi agent realizes it needs information. It pauses speech and fires the `queryVenueVoxDatabase` function tool with the caller's query (e.g. `question: "Is there anything on Saturday?"`).
+2. **Tool Invocation:** The Vapi agent realizes it needs information. It pauses speech and fires the `queryVenueVoxAIDatabase` function tool with the caller's query (e.g. `question: "Is there anything on Saturday?"`).
 3. **Database Pull:** Your backend at `backend/src/routes/webhook.routes.ts` queries Prisma:
    ```typescript
    const availableSlots = await prisma.bookableSlot.findMany({

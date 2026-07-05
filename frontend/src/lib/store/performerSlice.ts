@@ -165,7 +165,7 @@ export const updatePortfolioThunk = createAsyncThunk(
       } = payload;
 
       let finalImageUrl = imageUrl;
-      const performerFolder = `VenueVox/Performer/${performerId}/images`;
+      const performerFolder = `VenueVoxAI/Performer/${performerId}/images`;
 
       // 1. Upload pending profile photo
       if (pendingProfileFile) {

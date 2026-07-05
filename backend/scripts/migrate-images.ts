@@ -54,7 +54,7 @@ async function migrateImages() {
     let newImageUrl = performer.imageUrl;
     let newPhotos = [...(performer.photos || [])];
 
-    const performerFolder = `VenueVox/Performer/${performer.id}/images`;
+    const performerFolder = `VenueVoxAI/Performer/${performer.id}/images`;
 
     // 1. Primary imageUrl
     if (performer.imageUrl && !performer.imageUrl.includes(`res.cloudinary.com/${CLOUD_NAME}`)) {
@@ -112,7 +112,7 @@ async function migrateImages() {
     let newPhotos = [...(venue.photos || [])];
 
     const orgId = venue.organizationId;
-    const venueFolder = `VenueVox/Organization/${orgId}/Venue/${venue.id}/images`;
+    const venueFolder = `VenueVoxAI/Organization/${orgId}/Venue/${venue.id}/images`;
 
     // 1. Primary imageUrl
     if (venue.imageUrl && !venue.imageUrl.includes(`res.cloudinary.com/${CLOUD_NAME}`)) {

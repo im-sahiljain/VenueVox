@@ -189,7 +189,7 @@ export default function PerformerDashboardLayout({ children }: { children: React
         isSidebarCollapsed={isSidebarCollapsed}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
         handleLogout={handleLogout}
-        title="VenueVox Performer"
+        title="VenueVoxAI Performer"
         logo={Compass}
         isOpenOnMobile={isOpenOnMobile}
         setIsOpenOnMobile={setIsOpenOnMobile}
@@ -205,7 +205,7 @@ export default function PerformerDashboardLayout({ children }: { children: React
             >
               <Menu className="w-6 h-6" />
             </button>
-            <span className="font-bold text-base">VenueVox</span>
+            <span className="font-bold text-base">VenueVoxAI</span>
           </div>
           <div className="w-8 h-8 bg-rose-500 text-white font-bold flex items-center justify-center rounded-lg uppercase text-xs">
             {user?.name?.substring(0, 2) || 'U'}

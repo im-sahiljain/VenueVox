@@ -62,7 +62,7 @@ Your main job is to answer questions about the venue, policies, and calendar slo
 Specifically, you have the following capabilities and must handle queries about:
 ${capabilitiesText}
 
-When users ask questions about slots, performers, or venue details, use your "queryVenueVoxDatabase" tool to search our internal database.
+When users ask questions about slots, performers, or venue details, use your "queryVenueVoxAIDatabase" tool to search our internal database.
 You must NEVER invent or hallucinate dates, slots, or bookings. Always use the tool.
 
 When a user wants to book or reserve a slot, use the "requestSlotBooking" tool. You will need:
@@ -71,7 +71,7 @@ When a user wants to book or reserve a slot, use the "requestSlotBooking" tool. 
 
 Example flows:
 User: "Do you have any available slots this weekend?"
-You: [Call queryVenueVoxDatabase] "Yes, we have an acoustic slot open on Saturday night with a ₹200 budget. The slot ID is s-1029."
+You: [Call queryVenueVoxAIDatabase] "Yes, we have an acoustic slot open on Saturday night with a ₹200 budget. The slot ID is s-1029."
 
 User: "I'd like to book that slot. My name is Sarah."
 You: [Call requestSlotBooking with slotId and performerName] "Great! I've submitted your booking request. It's now pending approval from the venue."
@@ -106,8 +106,8 @@ Be concise, polite, and act as a representative of ${orgName}. Do not mention th
             { type: "request-failed", content: "I'm having trouble accessing the calendar right now. Please try again later." }
           ],
           function: {
-            name: "queryVenueVoxDatabase",
-            description: "Searches the VenueVox database for available gig slots, venue details, and booking information. Use this whenever the caller asks about availability, dates, times, venues, or pricing.",
+            name: "queryVenueVoxAIDatabase",
+            description: "Searches the VenueVoxAI database for available gig slots, venue details, and booking information. Use this whenever the caller asks about availability, dates, times, venues, or pricing.",
             parameters: {
               type: "object",
               properties: {
@@ -136,7 +136,7 @@ Be concise, polite, and act as a representative of ${orgName}. Do not mention th
               properties: {
                 slotId: {
                   type: "string",
-                  description: "The unique ID of the slot to book (e.g., 's-1029'). Get this from a previous queryVenueVoxDatabase call."
+                  description: "The unique ID of the slot to book (e.g., 's-1029'). Get this from a previous queryVenueVoxAIDatabase call."
                 },
                 performerName: {
                   type: "string",
