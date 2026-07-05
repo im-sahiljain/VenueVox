@@ -18,6 +18,7 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
   const [loading, setLoading] = useState(true);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [isDeprovisioning, setIsDeprovisioning] = useState(false);
+  const [isConnectingCall, setIsConnectingCall] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
   const [isCallActive, setIsCallActive] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -39,6 +40,7 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
 
     vapi.on('call-start', () => {
       setIsCallActive(true);
+      setIsConnectingCall(false);
       setTranscript([]);
       toast.success('Call connected! Speak into your microphone.');
     });
@@ -46,6 +48,7 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
     vapi.on('call-end', () => {
       setIsCallActive(false);
       setIsSpeaking(false);
+      setIsConnectingCall(false);
       toast.info('Call ended.');
       // Refresh call logs
       loadCalls();
@@ -77,6 +80,7 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
       toast.error('Voice call error occurred.');
       setIsCallActive(false);
       setIsSpeaking(false);
+      setIsConnectingCall(false);
     });
 
     return () => {
@@ -177,6 +181,7 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
       vapiRef.current?.stop();
     } else {
       setTranscript([]);
+      setIsConnectingCall(true);
       vapiRef.current?.start(assistant.vapiAssistantId);
     }
   }, [assistant, isCallActive]);
@@ -346,9 +351,22 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
               <div className="flex justify-center relative z-10 mb-4">
                 <Button 
                   onClick={toggleCall}
-                  className={`px-8 py-6 rounded-full font-bold text-lg transition-all ${isCallActive ? 'bg-rose-600 hover:bg-rose-700 shadow-[0_0_20px_rgba(225,29,72,0.4)]' : 'bg-emerald-600 hover:bg-emerald-700 shadow-[0_0_20px_rgba(5,150,105,0.4)]'}`}
+                  disabled={isConnectingCall}
+                  className={`px-8 py-6 rounded-full font-bold text-lg transition-all ${
+                    isCallActive 
+                      ? 'bg-rose-600 hover:bg-rose-700 shadow-[0_0_20px_rgba(225,29,72,0.4)]' 
+                      : isConnectingCall
+                      ? 'bg-amber-600 hover:bg-amber-700 shadow-[0_0_20px_rgba(217,119,6,0.4)]'
+                      : 'bg-emerald-600 hover:bg-emerald-700 shadow-[0_0_20px_rgba(5,150,105,0.4)]'
+                  }`}
                 >
-                  {isCallActive ? <><Square className="w-5 h-5 mr-2 fill-current" /> End Call</> : <><Play className="w-5 h-5 mr-2 fill-current" /> Start Call</>}
+                  {isCallActive ? (
+                    <><Square className="w-5 h-5 mr-2 fill-current" /> End Call</>
+                  ) : isConnectingCall ? (
+                    <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Calling...</>
+                  ) : (
+                    <><Play className="w-5 h-5 mr-2 fill-current" /> Start Call</>
+                  )}
                 </Button>
               </div>
 
