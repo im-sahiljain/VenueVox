@@ -5,9 +5,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'VenueVox API',
+      title: 'VenueVoxAI API',
       version: '1.0.0',
-      description: 'API Documentation for VenueVox backend',
+      description: 'API Documentation for VenueVoxAI backend',
     },
     servers: [
       {

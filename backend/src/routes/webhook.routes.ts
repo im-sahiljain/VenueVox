@@ -134,7 +134,7 @@ router.get('/calls', requireAuth, async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────
 // POST /api/v1/voice/webhook
 // Main webhook called by Vapi for executing tool calls
-// Supports: queryVenueVoxDatabase, requestSlotBooking
+// Supports: queryVenueVoxAIDatabase, requestSlotBooking
 // ─────────────────────────────────────────────────────────────────────
 router.post('/webhook', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -151,7 +151,7 @@ router.post('/webhook', async (req: Request, res: Response, next: NextFunction) 
     }
 
     // ── Route to the correct tool handler ──
-    if (toolCall.name === 'queryVenueVoxDatabase') {
+    if (toolCall.name === 'queryVenueVoxAIDatabase') {
       return await handleQueryDatabase(toolCall, req, res);
     } else if (toolCall.name === 'requestSlotBooking') {
       return await handleBookSlot(toolCall, req, res);
@@ -165,7 +165,7 @@ router.post('/webhook', async (req: Request, res: Response, next: NextFunction) 
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Tool Handler: queryVenueVoxDatabase
+// Tool Handler: queryVenueVoxAIDatabase
 // Answers natural language questions about slot availability using Gemini
 // ─────────────────────────────────────────────────────────────────────
 async function handleQueryDatabase(toolCall: any, req: Request, res: Response) {
@@ -177,10 +177,29 @@ async function handleQueryDatabase(toolCall: any, req: Request, res: Response) {
   const orgId = req.query.orgId as string;
   console.log(`🎙️ Received voice query: "${question}" for orgId: "${orgId || 'all'}"`);
 
+  const now = new Date();
+  const localDateStr = now.toLocaleDateString('en-CA');
+  const localTimeStr = now.toTimeString().slice(0, 5);
+
   // 1. Query real Prisma DB for available slots (filtered by organizationId if provided)
   const availableSlots = await prisma.bookableSlot.findMany({
     where: { 
       status: 'AVAILABLE',
+      OR: [
+        {
+          date: {
+            gt: localDateStr
+          }
+        },
+        {
+          date: {
+            equals: localDateStr
+          },
+          startTime: {
+            gt: localTimeStr
+          }
+        }
+      ],
       ...(orgId ? { venue: { organizationId: orgId } } : {})
     },
     include: {
@@ -209,7 +228,7 @@ async function handleQueryDatabase(toolCall: any, req: Request, res: Response) {
   );
 
   // 2. Formulate Prompt for Gemini
-  const geminiPrompt = `You are a VenueVox Database Assistant.
+  const geminiPrompt = `You are a VenueVoxAI Database Assistant.
 Your job is to answer a user's natural language request (heard over a phone call by a voice agent) about gig slots using the provided database context.
 
 Available Bookable Slots Context:
@@ -354,7 +373,7 @@ async function handleBookSlot(toolCall: any, req: Request, res: Response) {
           {
             toolCallId: toolCall.id,
             result: JSON.stringify({
-              answer: `I found the slot on ${slot.date} from ${slot.startTime} to ${slot.endTime} at ${slot.venue?.name} with a budget of ₹${slot.budget}. However, I need your registered performer name to complete the booking. You can also book directly through our website at stagehub.com. Would you like me to help with anything else?`,
+              answer: `I found the slot on ${slot.date} from ${slot.startTime} to ${slot.endTime} at ${slot.venue?.name} with a budget of ₹${slot.budget}. However, I need your registered performer name to complete the booking. You can also book directly through our website at venuevoxai.com. Would you like me to help with anything else?`,
             }),
           },
         ],

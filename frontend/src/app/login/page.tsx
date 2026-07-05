@@ -109,40 +109,40 @@ function LoginContent() {
     let demoRole: "organization" | "performer" = "organization";
 
     if (demoType === "org1") {
-      demoEmail = "org1@stagehub.com";
-      demoPassword = "org1@stagehub";
+      demoEmail = "org1@venuevoxai.com";
+      demoPassword = "org1@venuevoxai";
       demoRole = "organization";
     } else if (demoType === "org2") {
-      demoEmail = "org2@stagehub.com";
-      demoPassword = "org2@stagehub";
+      demoEmail = "org2@venuevoxai.com";
+      demoPassword = "org2@venuevoxai";
       demoRole = "organization";
     } else if (demoType === "mgr1") {
-      demoEmail = "john@stagehub.com";
-      demoPassword = "mgr1@stagehub";
+      demoEmail = "john@venuevoxai.com";
+      demoPassword = "mgr1@venuevoxai";
       demoRole = "organization";
     } else if (demoType === "mgr2") {
-      demoEmail = "alice@stagehub.com";
-      demoPassword = "mgr2@stagehub";
+      demoEmail = "alice@venuevoxai.com";
+      demoPassword = "mgr2@venuevoxai";
       demoRole = "organization";
     } else if (demoType === "mgr3") {
-      demoEmail = "david@stagehub.com";
-      demoPassword = "mgr3@stagehub";
+      demoEmail = "david@venuevoxai.com";
+      demoPassword = "mgr3@venuevoxai";
       demoRole = "organization";
     } else if (demoType === "mgr4") {
-      demoEmail = "emma@stagehub.com";
-      demoPassword = "mgr4@stagehub";
+      demoEmail = "emma@venuevoxai.com";
+      demoPassword = "mgr4@venuevoxai";
       demoRole = "organization";
     } else if (demoType === "perf1") {
-      demoEmail = "perf1@stagehub.com";
-      demoPassword = "perf1@stagehub";
+      demoEmail = "perf1@venuevoxai.com";
+      demoPassword = "perf1@venuevoxai";
       demoRole = "performer";
     } else if (demoType === "perf2") {
-      demoEmail = "perf2@stagehub.com";
-      demoPassword = "perf2@stagehub";
+      demoEmail = "perf2@venuevoxai.com";
+      demoPassword = "perf2@venuevoxai";
       demoRole = "performer";
     } else {
-      demoEmail = "perf3@stagehub.com";
-      demoPassword = "perf3@stagehub";
+      demoEmail = "perf3@venuevoxai.com";
+      demoPassword = "perf3@venuevoxai";
       demoRole = "performer";
     }
 
@@ -204,11 +204,11 @@ function LoginContent() {
               <Calendar className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">
-              Venue<span className="text-rose-500">Vox</span>
+              Venue<span className="text-rose-500">VoxAI</span>
             </span>
           </Link>
           <h2 className="text-center text-3xl font-extrabold text-slate-900">
-            Sign in to VenueVox
+            Sign in to VenueVoxAI
           </h2>
           <p className="mt-2 text-sm text-slate-500">
             Enter any email and password to log in.
@@ -326,7 +326,7 @@ function LoginContent() {
                     ABC Owner
                   </span>
                   <span className="text-[9px] text-slate-500 truncate block w-full">
-                    org1@stagehub.com
+                    org1@venuevoxai.com
                   </span>
                 </Button>
                 <Button
@@ -374,7 +374,7 @@ function LoginContent() {
                     XYZ Owner
                   </span>
                   <span className="text-[9px] text-slate-500 truncate block w-full">
-                    org2@stagehub.com
+                    org2@venuevoxai.com
                   </span>
                 </Button>
                 <Button

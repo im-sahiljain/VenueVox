@@ -1,47 +1,43 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useAppDispatch, useAppSelector, RootState } from '@/lib/store/store';
+import React, { useState } from "react";
+import { useAppDispatch, useAppSelector, RootState } from "@/lib/store/store";
 import {
   createSlotThunk,
   deleteSlotThunk,
   setSelectedCalendarVenue,
   setIsBulkCreateMode,
   OrganizationState,
-} from '@/lib/store/organizationSlice';
+} from "@/lib/store/organizationSlice";
 import {
   Plus,
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { toLocalISOString, to12h } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { toLocalISOString, to12h } from "@/lib/utils";
 
 export default function OrganizationCalendar() {
   const dispatch = useAppDispatch();
-  const {
-    venuesList,
-    slotsList,
-    selectedCalendarVenue,
-    isBulkCreateMode,
-  } = useAppSelector((state: any) => state.organization as OrganizationState);
+  const { venuesList, slotsList, selectedCalendarVenue, isBulkCreateMode } =
+    useAppSelector((state: any) => state.organization as OrganizationState);
 
   const [selectedDate, setSelectedDate] = useState<string>(
-    toLocalISOString(new Date())
+    toLocalISOString(new Date()),
   );
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
   const [newSlotData, setNewSlotData] = useState({
-    startTime: '19:00',
-    endTime: '22:00',
+    startTime: "19:00",
+    endTime: "22:00",
     budget: 5000,
-    status: 'AVAILABLE',
+    status: "AVAILABLE",
   });
 
   const handlePrevMonth = () => {
@@ -83,33 +79,35 @@ export default function OrganizationCalendar() {
         endTime: newSlotData.endTime,
         budget: newSlotData.budget,
         status: newSlotData.status,
-      })
+      }),
     ).then((res) => {
-      if (res.meta.requestStatus === 'fulfilled') {
+      if (res.meta.requestStatus === "fulfilled") {
         setShowAddSlotModal(false);
       }
     });
   };
 
   const handleDeleteSlot = (slotId: string) => {
-    if (!confirm('Are you sure you want to delete this slot?')) return;
+    if (!confirm("Are you sure you want to delete this slot?")) return;
     dispatch(deleteSlotThunk(slotId));
   };
 
   // Filter slots for active venue
   const selectedVenueSlots = slotsList.filter(
-    (s) => s.venueId === selectedCalendarVenue
+    (s) => s.venueId === selectedCalendarVenue,
   );
 
   // Slots on selected day
   const selectedDaySlots = selectedVenueSlots.filter(
-    (s) => s.date === selectedDate
+    (s) => s.date === selectedDate,
   );
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Availability Calendar</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          Availability Calendar
+        </h1>
         <p className="text-slate-500 mt-1 dark:text-slate-400">
           Configure slot times and booking budget on dates to accept requests.
         </p>
@@ -121,8 +119,10 @@ export default function OrganizationCalendar() {
           <div className="flex items-center gap-3">
             <label className="font-bold text-sm">Active Venue:</label>
             <select
-              value={selectedCalendarVenue || ''}
-              onChange={(e) => dispatch(setSelectedCalendarVenue(e.target.value))}
+              value={selectedCalendarVenue || ""}
+              onChange={(e) =>
+                dispatch(setSelectedCalendarVenue(e.target.value))
+              }
               className="p-2.5 rounded-xl border border-slate-300 text-slate-850 focus:outline-none bg-slate-50 font-medium dark:bg-slate-900 dark:border-slate-700 dark:text-white text-sm"
             >
               {venuesList.map((v) => (
@@ -134,7 +134,7 @@ export default function OrganizationCalendar() {
           </div>
 
           {/* Bulk Create Toggle */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+          {/* <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-450">
               Bulk create mode:
             </span>
@@ -151,7 +151,7 @@ export default function OrganizationCalendar() {
               ></div>
             </div>
             <span className="text-[10px] text-slate-400 ml-1">(Drag across dates)</span>
-          </div>
+          </div> */}
         </div>
 
         <div className="flex gap-2">
@@ -168,7 +168,8 @@ export default function OrganizationCalendar() {
       {/* Calendar Legend */}
       <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-650 dark:text-slate-400 px-2">
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> Available
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>{" "}
+          Available
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> Pending
@@ -197,10 +198,13 @@ export default function OrganizationCalendar() {
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <h3 className="font-bold text-lg whitespace-nowrap text-center min-w-[130px]">
-                {new Date(selectedDate || Date.now()).toLocaleString('default', {
-                  month: 'long',
-                  year: 'numeric',
-                })}
+                {new Date(selectedDate || Date.now()).toLocaleString(
+                  "default",
+                  {
+                    month: "long",
+                    year: "numeric",
+                  },
+                )}
               </h3>
               <Button
                 variant="ghost"
@@ -215,7 +219,7 @@ export default function OrganizationCalendar() {
               {selectedDate && (
                 <Button
                   variant="ghost"
-                  onClick={() => setSelectedDate('')}
+                  onClick={() => setSelectedDate("")}
                   className="text-xs text-rose-500 hover:text-rose-600 h-8 px-2 hidden sm:block"
                 >
                   Clear Selection
@@ -231,7 +235,7 @@ export default function OrganizationCalendar() {
           </div>
 
           <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-slate-400 mb-2">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
               <span key={d}>{d}</span>
             ))}
           </div>
@@ -242,16 +246,21 @@ export default function OrganizationCalendar() {
               length: new Date(
                 new Date(selectedDate || Date.now()).getFullYear(),
                 new Date(selectedDate || Date.now()).getMonth(),
-                1
+                1,
               ).getDay(),
             }).map((_, idx) => (
-              <div key={`empty-${idx}`} className="h-16 border border-transparent"></div>
+              <div
+                key={`empty-${idx}`}
+                className="h-16 border border-transparent"
+              ></div>
             ))}
 
             {/* Active month days */}
             {getDaysInMonth().map((dayDate) => {
               const dayStr = toLocalISOString(dayDate);
-              const slotsForDay = selectedVenueSlots.filter((s) => s.date === dayStr);
+              const slotsForDay = selectedVenueSlots.filter(
+                (s) => s.date === dayStr,
+              );
               const isSelected = selectedDate === dayStr;
 
               return (
@@ -260,13 +269,15 @@ export default function OrganizationCalendar() {
                   onClick={() => setSelectedDate(dayStr)}
                   className={`h-16 border rounded-2xl flex flex-col items-center justify-between p-1.5 transition text-left ${
                     isSelected
-                      ? 'border-rose-500 bg-rose-50/30 ring-1 ring-rose-500'
-                      : 'border-slate-200 hover:border-slate-400 dark:border-slate-700'
+                      ? "border-rose-500 bg-rose-50/30 ring-1 ring-rose-500"
+                      : "border-slate-200 hover:border-slate-400 dark:border-slate-700"
                   }`}
                 >
                   <span
                     className={`text-xs font-bold ${
-                      isSelected ? 'text-rose-600' : 'text-slate-700 dark:text-slate-300'
+                      isSelected
+                        ? "text-rose-600"
+                        : "text-slate-700 dark:text-slate-300"
                     }`}
                   >
                     {dayDate.getDate()}
@@ -278,13 +289,13 @@ export default function OrganizationCalendar() {
                       <span
                         key={slot.id}
                         className={`w-2.5 h-2.5 rounded-full ${
-                          slot.status?.toUpperCase() === 'AVAILABLE'
-                            ? 'bg-emerald-500'
-                            : slot.status?.toUpperCase() === 'PENDING'
-                            ? 'bg-amber-500'
-                            : slot.status?.toUpperCase() === 'BOOKED'
-                            ? 'bg-blue-500'
-                            : 'bg-slate-400'
+                          slot.status?.toUpperCase() === "AVAILABLE"
+                            ? "bg-emerald-500"
+                            : slot.status?.toUpperCase() === "PENDING"
+                              ? "bg-amber-500"
+                              : slot.status?.toUpperCase() === "BOOKED"
+                                ? "bg-blue-500"
+                                : "bg-slate-400"
                         }`}
                         title={`${slot.status}: ${to12h(slot.startTime)}-${to12h(slot.endTime)}`}
                       ></span>
@@ -301,10 +312,12 @@ export default function OrganizationCalendar() {
           <div className="space-y-4">
             <div className="border-b border-slate-100 pb-3 dark:border-slate-700">
               <h3 className="font-bold text-slate-850 dark:text-white text-base">
-                {selectedDate ? `Slots for ${selectedDate}` : 'Next 7 Days'}
+                {selectedDate ? `Slots for ${selectedDate}` : "Next 7 Days"}
               </h3>
               <span className="text-xs text-slate-400">
-                {selectedDate ? 'Manage calendar times for this day' : 'Upcoming slots overview'}
+                {selectedDate
+                  ? "Manage calendar times for this day"
+                  : "Upcoming slots overview"}
               </span>
             </div>
 
@@ -316,10 +329,15 @@ export default function OrganizationCalendar() {
                     const d = new Date(s.date);
                     const now = new Date();
                     now.setHours(0, 0, 0, 0);
-                    const limit = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    const limit = new Date(
+                      now.getTime() + 7 * 24 * 60 * 60 * 1000,
+                    );
                     return d >= now && d <= limit;
                   })
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .sort(
+                    (a, b) =>
+                      new Date(a.date).getTime() - new Date(b.date).getTime(),
+                  )
                   .map((slot) => (
                     <div
                       key={slot.id}
@@ -329,18 +347,19 @@ export default function OrganizationCalendar() {
                         <span className="text-xs font-bold">{slot.date}</span>
                         <span
                           className={`w-2 h-2 rounded-full ${
-                            slot.status?.toUpperCase() === 'AVAILABLE'
-                              ? 'bg-emerald-500'
-                              : slot.status?.toUpperCase() === 'PENDING'
-                              ? 'bg-amber-500'
-                              : slot.status?.toUpperCase() === 'BOOKED'
-                              ? 'bg-blue-500'
-                              : 'bg-slate-400'
+                            slot.status?.toUpperCase() === "AVAILABLE"
+                              ? "bg-emerald-500"
+                              : slot.status?.toUpperCase() === "PENDING"
+                                ? "bg-amber-500"
+                                : slot.status?.toUpperCase() === "BOOKED"
+                                  ? "bg-blue-500"
+                                  : "bg-slate-400"
                           }`}
                         />
                       </div>
                       <div className="text-xs text-slate-550 dark:text-slate-400">
-                        {to12h(slot.startTime)} - {to12h(slot.endTime)} • ₹{slot.budget}
+                        {to12h(slot.startTime)} - {to12h(slot.endTime)} • ₹
+                        {slot.budget}
                       </div>
                     </div>
                   ))
@@ -358,13 +377,13 @@ export default function OrganizationCalendar() {
                     <div className="flex justify-between items-center">
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          slot.status?.toUpperCase() === 'AVAILABLE'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : slot.status?.toUpperCase() === 'PENDING'
-                            ? 'bg-amber-100 text-amber-800'
-                            : slot.status?.toUpperCase() === 'BOOKED'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                          slot.status?.toUpperCase() === "AVAILABLE"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : slot.status?.toUpperCase() === "PENDING"
+                              ? "bg-amber-100 text-amber-800"
+                              : slot.status?.toUpperCase() === "BOOKED"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                       >
                         {slot.status}
@@ -382,7 +401,7 @@ export default function OrganizationCalendar() {
                       <Button
                         variant="ghost"
                         onClick={() => handleDeleteSlot(slot.id)}
-                        disabled={slot.status?.toUpperCase() === 'BOOKED'}
+                        disabled={slot.status?.toUpperCase() === "BOOKED"}
                         className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 disabled:opacity-30 text-xs font-semibold px-2 py-1 rounded transition cursor-pointer h-7"
                       >
                         Delete slot
@@ -425,7 +444,12 @@ export default function OrganizationCalendar() {
                     type="time"
                     required
                     value={newSlotData.startTime}
-                    onChange={(e) => setNewSlotData({ ...newSlotData, startTime: e.target.value })}
+                    onChange={(e) =>
+                      setNewSlotData({
+                        ...newSlotData,
+                        startTime: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 rounded-xl border border-slate-350 bg-white text-slate-800 focus:outline-none dark:bg-slate-900 dark:border-slate-750 dark:text-white"
                   />
                 </div>
@@ -435,28 +459,44 @@ export default function OrganizationCalendar() {
                     type="time"
                     required
                     value={newSlotData.endTime}
-                    onChange={(e) => setNewSlotData({ ...newSlotData, endTime: e.target.value })}
+                    onChange={(e) =>
+                      setNewSlotData({
+                        ...newSlotData,
+                        endTime: e.target.value,
+                      })
+                    }
                     className="w-full p-2.5 rounded-xl border border-slate-350 bg-white text-slate-800 focus:outline-none dark:bg-slate-900 dark:border-slate-750 dark:text-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Gig Budget Offered (₹)</label>
+                <label className="block font-semibold mb-1">
+                  Gig Budget Offered (₹)
+                </label>
                 <input
                   type="number"
                   required
                   value={newSlotData.budget}
-                  onChange={(e) => setNewSlotData({ ...newSlotData, budget: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setNewSlotData({
+                      ...newSlotData,
+                      budget: Number(e.target.value),
+                    })
+                  }
                   className="w-full p-2.5 rounded-xl border border-slate-350 bg-white text-slate-850 focus:outline-none dark:bg-slate-900 dark:border-slate-750 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Initial Status</label>
+                <label className="block font-semibold mb-1">
+                  Initial Status
+                </label>
                 <select
                   value={newSlotData.status}
-                  onChange={(e) => setNewSlotData({ ...newSlotData, status: e.target.value })}
+                  onChange={(e) =>
+                    setNewSlotData({ ...newSlotData, status: e.target.value })
+                  }
                   className="w-full p-2.5 rounded-xl border border-slate-350 bg-white text-slate-850 focus:outline-none dark:bg-slate-900 dark:border-slate-750 dark:text-white"
                 >
                   <option value="AVAILABLE">Available for booking</option>

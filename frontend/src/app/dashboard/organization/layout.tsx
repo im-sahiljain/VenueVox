@@ -217,7 +217,7 @@ export default function OrganizationDashboardLayout({
         isSidebarCollapsed={isSidebarCollapsed}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
         handleLogout={handleLogout}
-        title="VenueVox Dashboard"
+        title="VenueVoxAI Dashboard"
         logo={Building}
         isOpenOnMobile={isOpenOnMobile}
         setIsOpenOnMobile={setIsOpenOnMobile}
@@ -233,7 +233,7 @@ export default function OrganizationDashboardLayout({
             >
               <Menu className="w-6 h-6" />
             </button>
-            <span className="font-bold tracking-tight">VenueVox</span>
+            <span className="font-bold tracking-tight">VenueVoxAI</span>
           </div>
         </div>
 

@@ -1,8 +1,8 @@
-# StageHub – Entertainment Booking Marketplace MVP
+# VenueVoxAI – Entertainment Booking Marketplace MVP
 
-StageHub is a premium, availability-first entertainment booking marketplace that connects **venue organizations** (restaurants, hotels, clubs, etc.) with **performers** (bands, DJs, comedians).
+VenueVoxAI is a premium, availability-first entertainment booking marketplace that connects **venue organizations** (restaurants, hotels, clubs, etc.) with **performers** (bands, DJs, comedians).
 
-Unlike traditional platforms, StageHub focuses exclusively on **calendar availability** (rather than posts or social feeds). Venues create and publish bookable calendar slots, and performers find matches and request reservations through a structured approval workflow.
+Unlike traditional platforms, VenueVoxAI focuses exclusively on **calendar availability** (rather than posts or social feeds). Venues create and publish bookable calendar slots, and performers find matches and request reservations through a structured approval workflow.
 
 This MVP is styled with a custom **Airbnb/Stripe-inspired dashboard design system**, supporting custom dark modes, interactive calendar views, direct messaging, notifications, and ratings.
 
@@ -15,7 +15,7 @@ The project is structured as a feature-first monorepo divided into two distinct 
 - `frontend/`: Next.js web application utilizing Tailwind CSS, TypeScript, and Lucide React.
 
 ```
-stagehub/
+venuevoxai/
 ├── backend/
 │   ├── Dockerfile
 │   ├── package.json
@@ -107,20 +107,20 @@ Status: ALL TESTS PASSED SUCCESSFULLY!
 Since this MVP runs on **mock authentication**, any email and password combination will grant login access. We have pre-configured four high-quality profiles to demo the two core workflows:
 
 1. **ABC Hospitality (Organization / Venue Admin)**
-   - **Email:** `org@stagehub.com`
+   - **Email:** `org@venuevoxai.com`
    - **Role selection:** Organization / Venue
    - **Venues managed:** *Sector 17 Brew & Cafe*, *The Downtown Club & Lounge*, and *Metropolitan Resort*
 
 2. **Sarah & Jack (Performer / Acoustic Duo)**
-   - **Email:** `perf1@stagehub.com`
+   - **Email:** `perf1@venuevoxai.com`
    - **Role selection:** Performer / Artist
 
 3. **DJ Electro (Performer / House & Techno)**
-   - **Email:** `perf2@stagehub.com`
+   - **Email:** `perf2@venuevoxai.com`
    - **Role selection:** Performer / Artist
 
 4. **Mike the Comedian (Performer / Stand-up Artist)**
-   - **Email:** `perf3@stagehub.com`
+   - **Email:** `perf3@venuevoxai.com`
    - **Role selection:** Performer / Artist
 
 ---
@@ -128,11 +128,11 @@ Since this MVP runs on **mock authentication**, any email and password combinati
 ## Interactive End-to-End Walkthrough
 
 To experience the full availability-driven booking workflow:
-1. **Login as Performer** using `perf1@stagehub.com` (Acoustic Duo).
+1. **Login as Performer** using `perf1@venuevoxai.com` (Acoustic Duo).
 2. Go to **Discover Slots**. You'll see the available slots posted by ABC Hospitality.
 3. Filter slots by location "Cityville" or select "Café" type. Click **View Details & Apply** on *Sector 17 Brew & Cafe*'s slot.
 4. Click **Send Request to Book Slot**. The slot status will change to "Pending" and a booking request is logged.
-5. **Sign Out** and **Login as Venue Admin** using `org@stagehub.com`.
+5. **Sign Out** and **Login as Venue Admin** using `org@venuevoxai.com`.
 6. You will see a new **Booking Request Received** banner in your dashboard notifications!
 7. Navigate to the **Messages** tab, select Acoustic Duo, and chat with them regarding setup.
 8. Go to **Bookings** or **Calendar**, inspect the request, and click **Approve**.

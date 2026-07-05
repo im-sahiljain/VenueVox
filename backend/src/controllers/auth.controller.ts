@@ -96,7 +96,7 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role
       },
-      process.env.JWT_SECRET || 'venuevox-super-secret-key',
+      process.env.JWT_SECRET || 'venuevoxai-super-secret-key',
       { expiresIn: '30d' }
     );
 

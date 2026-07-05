@@ -37,7 +37,7 @@ export const requireAuth = async (
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'venuevox-super-secret-key'
+      process.env.JWT_SECRET || 'venuevoxai-super-secret-key'
     ) as { id: string; email: string; role: string };
 
     const user = await prisma.user.findUnique({

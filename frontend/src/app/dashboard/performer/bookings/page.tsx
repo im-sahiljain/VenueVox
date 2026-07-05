@@ -1,37 +1,45 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAppDispatch, useAppSelector } from '@/lib/store/store';
-import { setActiveVenueId, loadPerformerDataThunk } from '@/lib/store/performerSlice';
-import { MessageSquare, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/lib/store/store";
+import {
+  setActiveVenueId,
+  loadPerformerDataThunk,
+} from "@/lib/store/performerSlice";
+import { MessageSquare, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { BookingTimeline } from '@/components/BookingTimeline';
-import { api } from '@/lib/api';
-import { toLocalISOString, to12h } from '@/lib/utils';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { BookingTimeline } from "@/components/BookingTimeline";
+import { api } from "@/lib/api";
+import { toLocalISOString, to12h } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function PerformerBookings() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user, performer, bookingsList, reviewsList } = useAppSelector(
-    (state) => state.performer
+    (state) => state.performer,
   );
 
   // Review modal state
-  const [showAddReviewModal, setShowAddReviewModal] = useState<any | null>(null);
+  const [showAddReviewModal, setShowAddReviewModal] = useState<any | null>(
+    null,
+  );
   const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('');
+  const [reviewComment, setReviewComment] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "confirmed" | "pending">(
+    "all",
+  );
 
   const startChat = (venue: any) => {
     dispatch(setActiveVenueId(venue.id));
-    router.push('/dashboard/performer/messages');
+    router.push("/dashboard/performer/messages");
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
@@ -49,10 +57,10 @@ export default function PerformerBookings() {
 
       const res = await api.createReview(data);
       if (res.success) {
-        toast.success('Review submitted successfully!');
+        toast.success("Review submitted successfully!");
         setShowAddReviewModal(null);
         setReviewRating(5);
-        setReviewComment('');
+        setReviewComment("");
         // Reload all data to refresh
         dispatch(
           loadPerformerDataThunk({
@@ -60,38 +68,102 @@ export default function PerformerBookings() {
             performerId: performer.id,
             performerState: performer.state,
             performerCity: performer.city,
-          })
+          }),
         );
       }
     } catch (err: any) {
-      toast.error('Failed to submit review: ' + err.message);
+      toast.error("Failed to submit review: " + err.message);
     }
   };
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Your Scheduled Gigs</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          Your Scheduled Gigs
+        </h1>
         <p className="text-slate-500 mt-1 dark:text-slate-400">
-          Track the approval progress of requested slots and leave reviews post-show.
+          Track the approval progress of requested slots and leave reviews
+          post-show.
         </p>
       </div>
 
       <BookingTimeline bookings={bookingsList} viewType="performer" />
 
+      {/* Tabs Switch */}
+      <div className="flex bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden p-1">
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`px-5 py-3 text-sm font-bold border-b-2 transition cursor-pointer ${
+            activeTab === "all"
+              ? "border-rose-500 text-rose-500"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          All Gigs ({bookingsList.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("confirmed")}
+          className={`px-5 py-3 text-sm font-bold border-b-2 transition cursor-pointer ${
+            activeTab === "confirmed"
+              ? "border-rose-500 text-rose-500"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          Confirmed (
+          {
+            bookingsList.filter((b) => b.status?.toUpperCase() === "CONFIRMED")
+              .length
+          }
+          )
+        </button>
+        <button
+          onClick={() => setActiveTab("pending")}
+          className={`px-5 py-3 text-sm font-bold border-b-2 transition cursor-pointer ${
+            activeTab === "pending"
+              ? "border-rose-500 text-rose-500"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          Pending (
+          {
+            bookingsList.filter((b) => b.status?.toUpperCase() === "PENDING")
+              .length
+          }
+          )
+        </button>
+      </div>
+
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
         <div className="divide-y divide-slate-100 dark:divide-slate-700">
-          {bookingsList.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 text-sm dark:text-slate-400">
-              You have not requested or booked any slots yet.
-            </div>
-          ) : (
-            bookingsList.map((booking) => {
+          {(() => {
+            const filteredBookings = bookingsList.filter((booking) => {
+              if (activeTab === "confirmed")
+                return booking.status?.toUpperCase() === "CONFIRMED";
+              if (activeTab === "pending")
+                return booking.status?.toUpperCase() === "PENDING";
+              return true;
+            });
+
+            if (filteredBookings.length === 0) {
+              return (
+                <div className="p-12 text-center text-slate-500 text-sm dark:text-slate-400">
+                  {activeTab === "confirmed"
+                    ? "You have no confirmed gigs yet."
+                    : activeTab === "pending"
+                      ? "You have no pending gig requests."
+                      : "You have not requested or booked any slots yet."}
+                </div>
+              );
+            }
+
+            return filteredBookings.map((booking) => {
               const todayStr = toLocalISOString(new Date());
               const isPast =
-                booking.date <= todayStr && booking.status?.toUpperCase() === 'CONFIRMED';
+                booking.date <= todayStr &&
+                booking.status?.toUpperCase() === "CONFIRMED";
               const hasReviewed = reviewsList.some(
-                (r) => r.bookingId === booking.id && r.reviewerId === user?.id
+                (r) => r.bookingId === booking.id && r.reviewerId === user?.id,
               );
 
               return (
@@ -106,13 +178,13 @@ export default function PerformerBookings() {
                       </h4>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          booking.status?.toUpperCase() === 'CONFIRMED'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : booking.status?.toUpperCase() === 'PENDING'
-                            ? 'bg-amber-100 text-amber-800'
-                            : booking.status?.toUpperCase() === 'REJECTED'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-slate-200'
+                          booking.status?.toUpperCase() === "CONFIRMED"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : booking.status?.toUpperCase() === "PENDING"
+                              ? "bg-amber-100 text-amber-800"
+                              : booking.status?.toUpperCase() === "REJECTED"
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-slate-200"
                         }`}
                       >
                         {booking.status}
@@ -120,10 +192,11 @@ export default function PerformerBookings() {
                     </div>
 
                     <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
-                      Address: {booking.venue?.address} | Date: {booking.date} | Time:{' '}
-                      {to12h(booking.startTime)} – {to12h(booking.endTime)}
+                      Address: {booking.venue?.address} | Date: {booking.date} |
+                      Time: {to12h(booking.startTime)} –{" "}
+                      {to12h(booking.endTime)}
                     </p>
-                    <span className="inline-block mt-2 text-xs text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full dark:bg-emerald-950/20 dark:text-emerald-400 font-sans">
+                    <span className="inline-block mt-2 text-xs text-emerald-600 font-bold bg-emerald-55 px-2.5 py-0.5 rounded-full dark:bg-emerald-950/20 dark:text-emerald-400 font-sans">
                       Offer: ₹{booking.budget}
                     </span>
                   </div>
@@ -152,8 +225,8 @@ export default function PerformerBookings() {
                   </div>
                 </div>
               );
-            })
-          )}
+            });
+          })()}
         </div>
       </div>
 
@@ -164,7 +237,7 @@ export default function PerformerBookings() {
           if (!open) {
             setShowAddReviewModal(null);
             setReviewRating(5);
-            setReviewComment('');
+            setReviewComment("");
           }
         }}
       >
@@ -173,13 +246,17 @@ export default function PerformerBookings() {
           showCloseButton={true}
         >
           <DialogHeader className="mb-4">
-            <DialogTitle className="text-lg font-bold text-left">Review Venue</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-left">
+              Review Venue
+            </DialogTitle>
           </DialogHeader>
 
           {showAddReviewModal && (
             <form onSubmit={handleSubmitReview} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold mb-1.5">Rating (1 to 5 Stars)</label>
+                <label className="block font-bold mb-1.5">
+                  Rating (1 to 5 Stars)
+                </label>
                 <div className="flex items-center gap-1.5">
                   {[1, 2, 3, 4, 5].map((starVal) => (
                     <button
@@ -191,8 +268,8 @@ export default function PerformerBookings() {
                       <Star
                         className={`w-6 h-6 ${
                           starVal <= reviewRating
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'text-slate-300'
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-slate-300"
                         }`}
                       />
                     </button>
@@ -201,7 +278,9 @@ export default function PerformerBookings() {
               </div>
 
               <div>
-                <label className="block font-bold mb-1.5">Feedback / Comments</label>
+                <label className="block font-bold mb-1.5">
+                  Feedback / Comments
+                </label>
                 <textarea
                   rows={4}
                   required

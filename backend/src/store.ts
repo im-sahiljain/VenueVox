@@ -130,8 +130,8 @@ export const users: User[] = [
   // Owners
   {
     id: "u-org-1",
-    email: "org1@stagehub.com",
-    password: "org1@stagehub",
+    email: "org1@venuevoxai.com",
+    password: "org1@venuevoxai",
     role: "organization",
     name: "ABC Hospitality Group",
     state: "Punjab",
@@ -139,8 +139,8 @@ export const users: User[] = [
   },
   {
     id: "u-org-2",
-    email: "org2@stagehub.com",
-    password: "org2@stagehub",
+    email: "org2@venuevoxai.com",
+    password: "org2@venuevoxai",
     role: "organization",
     name: "XYZ Entertainment Group",
     state: "Karnataka",
@@ -150,8 +150,8 @@ export const users: User[] = [
   // Owner 1 Managers (ABC)
   {
     id: "u-mgr-1",
-    email: "john@stagehub.com",
-    password: "mgr1@stagehub",
+    email: "john@venuevoxai.com",
+    password: "mgr1@venuevoxai",
     role: "organization",
     name: "John (Sector 17 Café Manager)",
     parentOrgId: "u-org-1",
@@ -159,8 +159,8 @@ export const users: User[] = [
   },
   {
     id: "u-mgr-2",
-    email: "alice@stagehub.com",
-    password: "mgr2@stagehub",
+    email: "alice@venuevoxai.com",
+    password: "mgr2@venuevoxai",
     role: "organization",
     name: "Alice (Downtown Club Manager)",
     parentOrgId: "u-org-1",
@@ -170,8 +170,8 @@ export const users: User[] = [
   // Owner 2 Managers (XYZ)
   {
     id: "u-mgr-3",
-    email: "david@stagehub.com",
-    password: "mgr3@stagehub",
+    email: "david@venuevoxai.com",
+    password: "mgr3@venuevoxai",
     role: "organization",
     name: "David (Redwood Tavern Manager)",
     parentOrgId: "u-org-2",
@@ -179,8 +179,8 @@ export const users: User[] = [
   },
   {
     id: "u-mgr-4",
-    email: "emma@stagehub.com",
-    password: "mgr4@stagehub",
+    email: "emma@venuevoxai.com",
+    password: "mgr4@venuevoxai",
     role: "organization",
     name: "Emma (Skyline Rooftop Manager)",
     parentOrgId: "u-org-2",
@@ -190,22 +190,22 @@ export const users: User[] = [
   // Performers
   {
     id: "u-perf-1",
-    email: "perf1@stagehub.com",
-    password: "perf1@stagehub",
+    email: "perf1@venuevoxai.com",
+    password: "perf1@venuevoxai",
     role: "performer",
     name: "Acoustic Duo (Sarah & Jack)",
   },
   {
     id: "u-perf-2",
-    email: "perf2@stagehub.com",
-    password: "perf2@stagehub",
+    email: "perf2@venuevoxai.com",
+    password: "perf2@venuevoxai",
     role: "performer",
     name: "DJ Electro",
   },
   {
     id: "u-perf-3",
-    email: "perf3@stagehub.com",
-    password: "perf3@stagehub",
+    email: "perf3@venuevoxai.com",
+    password: "perf3@venuevoxai",
     role: "performer",
     name: "Mike the Comedian",
   },

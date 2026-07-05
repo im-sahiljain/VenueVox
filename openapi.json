@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "VenueVox API Specification",
-    "description": "API contract for VenueVox Entertainment Marketplace. Provides endpoints for auth, venues, slots, bookings, chat, and reviews.",
+    "title": "VenueVoxAI API Specification",
+    "description": "API contract for VenueVoxAI Entertainment Marketplace. Provides endpoints for auth, venues, slots, bookings, chat, and reviews.",
     "version": "1.0.0"
   },
   "servers": [
@@ -23,7 +23,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string", "example": "org@stagehub.com" },
+                  "email": { "type": "string", "example": "org@venuevoxai.com" },
                   "password": { "type": "string", "example": "password" },
                   "role": { "type": "string", "enum": ["organization", "performer"], "example": "organization" }
                 },

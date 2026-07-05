@@ -231,7 +231,7 @@ export const updateVenueThunk = createAsyncThunk(
       } = payload;
 
       let finalImageUrl = imageUrl;
-      const venueFolder = `VenueVox/Organization/${orgId}/Venue/${id}/images`;
+      const venueFolder = `VenueVoxAI/Organization/${orgId}/Venue/${id}/images`;
 
       // 1. Upload pending cover photo
       if (pendingVenueProfileFile) {

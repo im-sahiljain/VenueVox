@@ -15,6 +15,21 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
+  const [tomorrowStr, setTomorrowStr] = React.useState("Friday, July 3rd");
+
+  React.useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const weekday = tomorrow.toLocaleDateString("en-US", { weekday: "long" });
+    const month = tomorrow.toLocaleDateString("en-US", { month: "long" });
+    const day = tomorrow.getDate();
+    let suffix = "th";
+    if (day === 1 || day === 21 || day === 31) suffix = "st";
+    else if (day === 2 || day === 22) suffix = "nd";
+    else if (day === 3 || day === 23) suffix = "rd";
+    setTomorrowStr(`${weekday}, ${month} ${day}${suffix}`);
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Navigation */}
@@ -25,7 +40,7 @@ export default function LandingPage() {
               <Calendar className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">
-              Venue<span className="text-rose-500">Vox</span>
+              Venue<span className="text-rose-500">VoxAI</span>
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -41,7 +56,10 @@ export default function LandingPage() {
             >
               For Venues
             </Link>
-            <Button asChild className="rounded-full cursor-pointer bg-primary text-white hover:bg-rose-600">
+            <Button
+              asChild
+              className="rounded-full cursor-pointer bg-primary text-white hover:bg-rose-600"
+            >
               <Link href="/login">Sign In</Link>
             </Button>
           </div>
@@ -54,7 +72,7 @@ export default function LandingPage() {
           <div className="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
             <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
               <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-rose-50 text-rose-600">
-                Airbnb meets Calendly for Gigs
+                Gig Booking Powered by AI Voice Agents
               </span>
               <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
                 The availability-first platform for booking
@@ -70,10 +88,19 @@ export default function LandingPage() {
               </p>
 
               <div className="mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
-                <Button asChild className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800 font-semibold py-6 rounded-xl shadow-md cursor-pointer">
-                  <Link href="/login?role=organization">Manage Your Venues</Link>
+                <Button
+                  asChild
+                  className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800 font-semibold py-6 rounded-xl shadow-md cursor-pointer"
+                >
+                  <Link href="/login?role=organization">
+                    Manage Your Venues
+                  </Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full sm:w-auto mt-4 sm:mt-0 text-slate-755 border-slate-350 font-semibold py-6 rounded-xl shadow-sm cursor-pointer">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-full sm:w-auto mt-4 sm:mt-0 text-slate-755 border-slate-350 font-semibold py-6 rounded-xl shadow-sm cursor-pointer"
+                >
                   <Link href="/login?role=performer">Find Available Slots</Link>
                 </Button>
               </div>
@@ -99,7 +126,7 @@ export default function LandingPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Date</span>
                       <span className="font-medium text-slate-800">
-                        Friday, July 3rd
+                        {tomorrowStr}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -189,10 +216,10 @@ export default function LandingPage() {
             <div className="bg-rose-500 text-white p-1.5 rounded-lg">
               <Calendar className="w-4 h-4" />
             </div>
-            <span className="text-white font-bold text-lg">VenueVox</span>
+            <span className="text-white font-bold text-lg">VenueVoxAI</span>
           </div>
           <p className="text-sm">
-            &copy; {new Date().getFullYear()} VenueVox, Inc. All rights
+            &copy; {new Date().getFullYear()} VenueVoxAI, Inc. All rights
             reserved.
           </p>
         </div>
