@@ -334,24 +334,67 @@ JSON Schema format to follow:
     });
   }
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${config.geminiApiKey}`;
+  let queryResult;
+  try {
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${config.geminiApiKey}`;
 
-  console.log('🤖 Sending request to Gemini...');
-  const geminiResponse = await axios.post(geminiUrl, {
-    contents: [
-      {
-        parts: [{ text: geminiPrompt }],
-      },
-    ],
-  });
+    console.log('🤖 Sending request to Gemini...');
+    const geminiResponse = await axios.post(geminiUrl, {
+      contents: [
+        {
+          parts: [{ text: geminiPrompt }],
+        },
+      ],
+    });
 
-  let rawText = geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let rawText = geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-  // Clean any potential markdown wrappers
-  rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    // Clean any potential markdown wrappers
+    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
-  console.log('🤖 Gemini generated answer:', rawText);
-  const queryResult = JSON.parse(rawText);
+    console.log('🤖 Gemini generated answer:', rawText);
+    queryResult = JSON.parse(rawText);
+  } catch (geminiError: any) {
+    console.warn('⚠️ Gemini request failed (possibly rate limited 429). Formatting local fallback response...', geminiError.message);
+    
+    // Generate a friendly local text response using the database results directly
+    let fallbackAnswer = "";
+    if (availableSlots.length === 0) {
+      fallbackAnswer = "I'm sorry, we don't have any available slots open for booking at the moment. Please check back later.";
+    } else {
+      const slotDescriptions = availableSlots.slice(0, 3).map(s => {
+        const slotDate = new Date(s.date + 'T00:00:00');
+        const weekday = slotDate.toLocaleDateString('en-US', { weekday: 'long' });
+        const month = slotDate.toLocaleDateString('en-US', { month: 'long' });
+        const dayNum = slotDate.getDate();
+        
+        let suffix = "th";
+        if (dayNum === 1 || dayNum === 21 || dayNum === 31) suffix = "st";
+        else if (dayNum === 2 || dayNum === 22) suffix = "nd";
+        else if (dayNum === 3 || dayNum === 23) suffix = "rd";
+        
+        const dateStr = `${weekday}, ${month} ${dayNum}${suffix}`;
+        
+        // Convert times to 12-hour format
+        const to12hLocal = (time24: string) => {
+          if (!time24) return '';
+          const [hStr, mStr] = time24.split(':');
+          const h = parseInt(hStr, 10);
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const displayH = h % 12 || 12;
+          return `${displayH}:${mStr} ${ampm}`;
+        };
+        
+        return `on ${dateStr} from ${to12hLocal(s.startTime)} to ${to12hLocal(s.endTime)} with a budget of ₹${s.budget} at ${s.venue?.name}`;
+      });
+      
+      fallbackAnswer = `Yes, we have some slots available! We have a slot ${slotDescriptions.join(', and another slot ')}. Which of these would you like to book?`;
+    }
+    
+    queryResult = {
+      answer: fallbackAnswer
+    };
+  }
 
   // 4. Send results back to Vapi
   return res.json({
