@@ -30,11 +30,14 @@ import {
 import { ImageSlideshow } from "@/components/ImageSlideshow";
 import { toast } from "sonner";
 
+import { VenueCardSkeleton } from "@/components/skeletons/skeletons";
+
 export default function VenuesManagement() {
   const dispatch = useAppDispatch();
-  const { user, venuesList, slotsList, isUploadingVenuePhoto } = useAppSelector(
+  const { user, venuesList, slotsList, isUploadingVenuePhoto, loading } = useAppSelector(
     (state: any) => state.organization as OrganizationState,
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search & Filter
   const [venueSearchQuery, setVenueSearchQuery] = useState("");
@@ -256,33 +259,36 @@ export default function VenuesManagement() {
       </div>
 
       {/* List of Venues */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {venuesList
-          .filter((v) => {
-            const matchesSearch = v.name
-              .toLowerCase()
-              .includes(venueSearchQuery.toLowerCase());
-            const matchesType =
-              venueTypeFilter === "All" || v.type === venueTypeFilter;
-            return matchesSearch && matchesType;
-          })
-          .map((venue) => {
-            const venueSlots = slotsList.filter((s) => s.venueId === venue.id);
-            const availableCount = venueSlots.filter(
-              (s) => s.status?.toUpperCase() === "AVAILABLE",
-            ).length;
-            const pendingCount = venueSlots.filter(
-              (s) => s.status?.toUpperCase() === "PENDING",
-            ).length;
-            const bookedCount = venueSlots.filter(
-              (s) => s.status?.toUpperCase() === "BOOKED",
-            ).length;
+      {loading && venuesList.length === 0 ? (
+        <VenueCardSkeleton count={6} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {venuesList
+            .filter((v) => {
+              const matchesSearch = v.name
+                .toLowerCase()
+                .includes(venueSearchQuery.toLowerCase());
+              const matchesType =
+                venueTypeFilter === "All" || v.type === venueTypeFilter;
+              return matchesSearch && matchesType;
+            })
+            .map((venue) => {
+              const venueSlots = slotsList.filter((s) => s.venueId === venue.id);
+              const availableCount = venueSlots.filter(
+                (s) => s.status?.toUpperCase() === "AVAILABLE",
+              ).length;
+              const pendingCount = venueSlots.filter(
+                (s) => s.status?.toUpperCase() === "PENDING",
+              ).length;
+              const bookedCount = venueSlots.filter(
+                (s) => s.status?.toUpperCase() === "BOOKED",
+              ).length;
 
-            return (
-              <div
-                key={venue.id}
-                className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700"
-              >
+              return (
+                <div
+                  key={venue.id}
+                  className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700 hover-card-rise"
+                >
                 <div className="relative h-48 bg-slate-100 dark:bg-slate-900">
                   <img
                     src={
@@ -387,7 +393,8 @@ export default function VenuesManagement() {
               </div>
             );
           })}
-      </div>
+        </div>
+      )}
 
       {/* CREATE VENUE MODAL */}
       <Dialog open={showAddVenueModal} onOpenChange={setShowAddVenueModal}>

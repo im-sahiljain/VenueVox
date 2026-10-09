@@ -295,9 +295,11 @@ function LoginContent() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-rose-500 hover:bg-rose-600 text-white py-6 rounded-xl text-sm font-semibold disabled:opacity-50 transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                loading={loading}
+                loadingText="Authenticating..."
+                className="w-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md shadow-rose-500/20 flex items-center justify-center gap-2 cursor-pointer border-none h-11"
               >
-                {loading ? "Authenticating..." : "Sign In"}
+                Sign In
                 {!loading && <ArrowRight className="w-4 h-4" />}
               </Button>
             </div>

@@ -14,10 +14,12 @@ import {
 } from '@/components/ui/dialog';
 import { ImageSlideshow } from '@/components/ImageSlideshow';
 
+import { PerformerCardSkeleton } from '@/components/skeletons/skeletons';
+
 export default function OrganizationDiscover() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, performersList } = useAppSelector((state) => state.organization);
+  const { user, performersList, loading } = useAppSelector((state: any) => state.organization);
 
   // Filters
   const [performerSearchQuery, setPerformerSearchQuery] = useState('');
@@ -35,7 +37,7 @@ export default function OrganizationDiscover() {
     router.push('/dashboard/organization/messages');
   };
 
-  const filteredPerformers = performersList.filter((p) => {
+  const filteredPerformers = performersList.filter((p: any) => {
     const matchSearch =
       p.name.toLowerCase().includes(performerSearchQuery.toLowerCase()) ||
       (p.biography && p.biography.toLowerCase().includes(performerSearchQuery.toLowerCase()));
@@ -133,7 +135,7 @@ export default function OrganizationDiscover() {
             No performers match your search filters.
           </div>
         ) : (
-          filteredPerformers.map((perf) => (
+          filteredPerformers.map((perf: any) => (
             <div
               key={perf.id}
               className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm flex flex-col justify-between group dark:bg-slate-800 dark:border-slate-700"

@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { Mic, Phone, Settings, Activity, AlertCircle, CheckCircle2, Play, Square, Loader2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { VoiceAISkeleton } from '@/components/skeletons/skeletons';
 import Vapi from '@vapi-ai/web';
 
 interface TranscriptEntry {
@@ -186,7 +187,7 @@ export default function VoiceAITab({ user, orgId }: { user: any; orgId: string }
     }
   }, [assistant, isCallActive]);
 
-  if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-slate-400 w-8 h-8" /></div>;
+  if (loading) return <VoiceAISkeleton />;
 
   return (
     <div className="space-y-8 animate-fade-in">

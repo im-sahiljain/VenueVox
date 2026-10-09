@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ImageSlideshow } from '@/components/ImageSlideshow';
+import { StatCardSkeleton, BookingRowSkeleton } from '@/components/skeletons/skeletons';
 import { to12h } from '@/lib/utils';
 
 export default function OrganizationOverview() {
@@ -38,18 +39,23 @@ export default function OrganizationOverview() {
   const dispatch = useAppDispatch();
 
   // Selector
-  const { user, venuesList, slotsList, bookingsList } = useAppSelector(
+  const { user, venuesList, slotsList, bookingsList, loading } = useAppSelector(
     (state: any) => state.organization as OrganizationState
   );
 
   const [performerDetailsModal, setPerformerDetailsModal] = useState<any | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  const handleApproveBooking = (id: string) => {
-    dispatch(approveBookingThunk(id));
+  const handleApproveBooking = async (id: string) => {
+    setActionLoadingId(id);
+    await dispatch(approveBookingThunk(id));
+    setActionLoadingId(null);
   };
 
-  const handleRejectBooking = (id: string) => {
-    dispatch(rejectBookingThunk(id));
+  const handleRejectBooking = async (id: string) => {
+    setActionLoadingId(id);
+    await dispatch(rejectBookingThunk(id));
+    setActionLoadingId(null);
   };
 
   const pendingBookings = bookingsList.filter(
@@ -80,36 +86,40 @@ export default function OrganizationOverview() {
       </div>
 
       {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-          <Building className="w-8 h-8 text-rose-500 mb-4" />
-          <h3 className="text-2xl font-bold">{venuesList.length}</h3>
-          <span className="text-slate-500 text-xs dark:text-slate-400">
-            Active Venues managed
-          </span>
+      {loading && venuesList.length === 0 ? (
+        <StatCardSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700 hover-card-rise">
+            <Building className="w-8 h-8 text-rose-500 mb-4" />
+            <h3 className="text-2xl font-bold">{venuesList.length}</h3>
+            <span className="text-slate-500 text-xs dark:text-slate-400">
+              Active Venues managed
+            </span>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700 hover-card-rise">
+            <CalendarIcon className="w-8 h-8 text-emerald-500 mb-4" />
+            <h3 className="text-2xl font-bold">{availableSlotsCount}</h3>
+            <span className="text-slate-500 text-xs dark:text-slate-400">
+              Open slots listed
+            </span>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700 hover-card-rise">
+            <Briefcase className="w-8 h-8 text-amber-500 mb-4" />
+            <h3 className="text-2xl font-bold">{pendingBookings.length}</h3>
+            <span className="text-slate-500 text-xs dark:text-slate-400">
+              Pending gig requests
+            </span>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700 hover-card-rise">
+            <Check className="w-8 h-8 text-blue-500 mb-4" />
+            <h3 className="text-2xl font-bold">{confirmedBookingsCount}</h3>
+            <span className="text-slate-500 text-xs dark:text-slate-400">
+              Confirmed bookings
+            </span>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-          <CalendarIcon className="w-8 h-8 text-emerald-500 mb-4" />
-          <h3 className="text-2xl font-bold">{availableSlotsCount}</h3>
-          <span className="text-slate-500 text-xs dark:text-slate-400">
-            Open slots listed
-          </span>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-          <Briefcase className="w-8 h-8 text-amber-500 mb-4" />
-          <h3 className="text-2xl font-bold">{pendingBookings.length}</h3>
-          <span className="text-slate-500 text-xs dark:text-slate-400">
-            Pending gig requests
-          </span>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-          <Check className="w-8 h-8 text-blue-500 mb-4" />
-          <h3 className="text-2xl font-bold">{confirmedBookingsCount}</h3>
-          <span className="text-slate-500 text-xs dark:text-slate-400">
-            Confirmed upcoming events
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -162,15 +172,17 @@ export default function OrganizationOverview() {
                   <div className="flex gap-2">
                     <Button
                       onClick={() => handleApproveBooking(booking.id)}
+                      loading={actionLoadingId === booking.id}
                       className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold cursor-pointer h-9 px-4"
                     >
-                      <Check className="w-3.5 h-3.5" /> Approve
+                      {!actionLoadingId && <Check className="w-3.5 h-3.5" />} Approve
                     </Button>
                     <Button
                       onClick={() => handleRejectBooking(booking.id)}
+                      loading={actionLoadingId === booking.id}
                       className="bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-semibold cursor-pointer h-9 px-4 border border-rose-200 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 dark:border-rose-900/50"
                     >
-                      <X className="w-3.5 h-3.5" /> Reject
+                      {!actionLoadingId && <X className="w-3.5 h-3.5" />} Reject
                     </Button>
                     <Button
                       variant="secondary"

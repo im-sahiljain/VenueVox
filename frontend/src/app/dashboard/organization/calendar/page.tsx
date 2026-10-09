@@ -24,10 +24,14 @@ import {
 } from "@/components/ui/dialog";
 import { toLocalISOString, to12h } from "@/lib/utils";
 
+import { CalendarSkeleton } from "@/components/skeletons/skeletons";
+
 export default function OrganizationCalendar() {
   const dispatch = useAppDispatch();
-  const { venuesList, slotsList, selectedCalendarVenue, isBulkCreateMode } =
+  const { venuesList, slotsList, selectedCalendarVenue, isBulkCreateMode, loading } =
     useAppSelector((state: any) => state.organization as OrganizationState);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string>(
     toLocalISOString(new Date()),

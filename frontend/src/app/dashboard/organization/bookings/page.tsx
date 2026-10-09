@@ -30,12 +30,14 @@ import { api } from '@/lib/api';
 import { toLocalISOString, to12h } from '@/lib/utils';
 import { toast } from 'sonner';
 
+import { BookingRowSkeleton } from '@/components/skeletons/skeletons';
+
 export default function OrganizationBookings() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
   // Selector
-  const { user, venuesList, bookingsList, reviewsList } = useAppSelector(
+  const { user, venuesList, bookingsList, reviewsList, loading } = useAppSelector(
     (state: any) => state.organization as OrganizationState
   );
 
@@ -44,17 +46,23 @@ export default function OrganizationBookings() {
   const [bookingSort, setBookingSort] = useState('dateAsc');
   const [performerDetailsModal, setPerformerDetailsModal] = useState<any | null>(null);
   const [showAddReviewModal, setShowAddReviewModal] = useState<any | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   // Review inputs
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
 
-  const handleApproveBooking = (id: string) => {
-    dispatch(approveBookingThunk(id));
+  const handleApproveBooking = async (id: string) => {
+    setActionLoadingId(id);
+    await dispatch(approveBookingThunk(id));
+    setActionLoadingId(null);
   };
 
-  const handleRejectBooking = (id: string) => {
-    dispatch(rejectBookingThunk(id));
+  const handleRejectBooking = async (id: string) => {
+    setActionLoadingId(id);
+    await dispatch(rejectBookingThunk(id));
+    setActionLoadingId(null);
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {

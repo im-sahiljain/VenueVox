@@ -1,0 +1,25 @@
+AI Automation Engineer
+We’re looking for highly motivated AI Automation Engineers to join our growing team. This is a fresher-friendly opportunity for candidates who are excited about the future of AI, automation, and intelligent systems. In this role, you will help us design, build, and optimize AI-driven workflows, voice agents, and automation systems using large language models (LLMs), no-code/low-code platforms, and popular CRMs. Collaborate with frontend teams, manage APIs, CRMs, and ensure performance and security best practices.
+
+🕑 Experience: 0-1 Years
+Apply Now
+Key Responsibilities
+Build and maintain automation flows using platforms like Make.com, n8n, Zapier, etc.
+Create and fine-tune prompts for Large Language Models (e.g. OpenAI, Anthropic, Claude, Mistral) for task-specific use cases.
+Design, deploy, and optimize AI voice agents using tools like VAPI, Retell, ElevenLabs.
+Integrate APIs and AI services into seamless automation pipelines.
+Integrate and manage popular CRMs like GoHighLevel (GHL), HubSpot, Salesforce into automation workflows.
+Collaborate with product, marketing, and operations teams to identify automation opportunities.
+Document processes, test systems thoroughly, and iterate based on feedback.
+Develop a basic to intermediate understanding of Large Language Models (LLMs) and prompt engineering.
+Work comfortably with no-code/low-code automation tools like Make.com, n8n, Zapier.
+Utilize voice agent tools such as VAPI, Retell, Speech-to-Text / Text-to-Speech APIs effectively.
+Apply basic API knowledge and logical workflow design skills to implement solutions.
+Exhibit strong problem-solving ability and maintain a proactive, self-learning attitude.
+Required Skills
+Basic to intermediate understanding of Large Language Models (LLMs) and prompt engineering
+Familiarity with no-code/low-code automation tools like Make.com, n8n, Zapier
+Experience (or interest) in using voice agent tools such as VAPI, Retell, Speech-to-Text / Text-to-Speech APIs
+Experience with popular CRMs like GoHighLevel (GHL), HubSpot, Salesforce, or similar is a plus
+Basic API knowledge and logical workflow design skills
+Strong problem-solving ability and a self-learning attitude

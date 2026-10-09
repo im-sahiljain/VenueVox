@@ -50,11 +50,12 @@ const formatDateStr = (dateStr: string) => {
   return `${weekday}, ${day}${suffix} ${month}, ${year}`;
 };
 
+import { VenueCardSkeleton } from "@/components/skeletons/skeletons";
+
 export default function PerformerDiscover() {
   const dispatch = useAppDispatch();
-  const { user, performer, slotsList, searchFilters } = useAppSelector(
-    (state) => state.performer,
-  );
+  const { user, performer, slotsList, venuesList, bookingsList, searchFilters, loading } =
+    useAppSelector((state: any) => state.performer);
 
   // Grouped venue dialog state
   const [selectedVenueSlots, setSelectedVenueSlots] = useState<any | null>(

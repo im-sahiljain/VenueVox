@@ -8,15 +8,17 @@ import { Briefcase, Compass, Star, MapPin, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { to12h } from '@/lib/utils';
 
+import { StatCardSkeleton, BookingRowSkeleton } from '@/components/skeletons/skeletons';
+
 export default function PerformerOverview() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { performer, bookingsList, slotsList, reviewsList } = useAppSelector(
-    (state) => state.performer
+  const { performer, bookingsList, slotsList, reviewsList, loading } = useAppSelector(
+    (state: any) => state.performer
   );
 
   const confirmedBookings = bookingsList.filter(
-    (b) => b.status?.toUpperCase() === 'CONFIRMED'
+    (b: any) => b.status?.toUpperCase() === 'CONFIRMED'
   );
 
   const startChat = (venue: any) => {
@@ -26,7 +28,7 @@ export default function PerformerOverview() {
 
   const averageRating =
     reviewsList.length > 0
-      ? (reviewsList.reduce((acc, r) => acc + r.rating, 0) / reviewsList.length).toFixed(1)
+      ? (reviewsList.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewsList.length).toFixed(1)
       : 'N/A';
 
   return (
@@ -97,7 +99,7 @@ export default function PerformerOverview() {
               No confirmed gigs on your calendar yet. Use Discover to request slots.
             </div>
           ) : (
-            confirmedBookings.map((booking) => (
+            confirmedBookings.map((booking: any) => (
               <div
                 key={booking.id}
                 className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4"
